@@ -1,7 +1,7 @@
 //@ts-check
 
-// eslint-disable-next-line @typescript-eslint/no-var-requires
 const { composePlugins, withNx } = require('@nx/next');
+const { i18n } = require('./next-i18next.config');
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -10,6 +10,9 @@ const nextConfig = {
   // Use this to set Nx-specific options
   // See: https://nx.dev/recipes/next/next-config-setup
   nx: {},
+  images: {
+    domains: ['images.unsplash.com'],
+  },
 };
 
 const plugins = [
@@ -17,4 +20,13 @@ const plugins = [
   withNx,
 ];
 
-module.exports = composePlugins(...plugins)(nextConfig);
+const mergedConfig = composePlugins(...plugins)(nextConfig);
+
+module.exports = {
+  ...mergedConfig,
+  images: {
+    ...(mergedConfig.images || {}),
+    domains: ['images.unsplash.com'],
+  },
+  i18n,
+};
