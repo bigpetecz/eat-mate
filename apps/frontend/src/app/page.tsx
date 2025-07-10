@@ -8,6 +8,7 @@ import { useEffect, useState } from 'react';
 import apiClient from './apiClient';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Spinner } from '@/components/ui/spinner';
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<any[]>([]);
@@ -34,8 +35,8 @@ export default function HomePage() {
         {/* Carousel */}
         <div className="w-full max-w-5xl overflow-hidden">
           {loading ? (
-            <div className="text-muted-foreground py-12">
-              Loading recipes...
+            <div className="flex items-center justify-center min-h-[20rem]">
+              <Spinner />
             </div>
           ) : error ? (
             <div className="text-destructive py-12">{error}</div>

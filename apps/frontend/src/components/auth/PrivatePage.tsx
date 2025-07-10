@@ -1,29 +1,22 @@
+'use client';
 import { useEffect } from 'react';
 import { ReactNode } from 'react';
-import { useAuthStore } from '@/app/auth/authStore';
 import { useRouter } from 'next/navigation';
+import { User } from '@/app/auth/authStore';
 
 interface PrivatePageProps {
+  user: User;
   children: ReactNode;
 }
 
-export default function PrivatePage({ children }: PrivatePageProps) {
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+export default function PrivatePage({ user, children }: PrivatePageProps) {
   const router = useRouter();
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    if (user === null) {
       router.replace('/sign-in');
     }
-  }, [isAuthenticated, router]);
-
-  if (!isAuthenticated) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <span>Loading...</span>
-      </div>
-    );
-  }
+  }, [user, router]);
 
   return <>{children}</>;
 }

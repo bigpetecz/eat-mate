@@ -89,14 +89,21 @@ export function LoginForm({
               </div>
               {error && <div className="text-destructive text-sm">{error}</div>}
               <div className="flex flex-col gap-3">
-                <Button type="submit" className="w-full" disabled={loading}>
+                <Button
+                  type="submit"
+                  className="w-full cursor-pointer"
+                  disabled={loading}
+                >
                   {loading ? 'Logging in...' : 'Login'}
                 </Button>
                 <Button
                   variant="outline"
-                  className="w-full"
+                  className="w-full cursor-pointer"
                   type="button"
                   disabled={loading}
+                  onClick={() => {
+                    window.location.href = `http://localhost:4000/api/auth/google`;
+                  }}
                 >
                   Login with Google
                 </Button>

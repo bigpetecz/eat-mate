@@ -1,7 +1,10 @@
 import { create } from 'zustand';
+import { useEffect, useState } from 'react';
+import { ReactNode } from 'react';
+import { useRouter } from 'next/navigation';
 
-interface User {
-  id: string;
+export interface User {
+  _id: string;
   displayName: string;
   email: string;
   avatar?: string;

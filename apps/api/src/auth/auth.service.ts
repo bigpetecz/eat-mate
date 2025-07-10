@@ -23,7 +23,9 @@ export class AuthService {
     displayName: string
   ) {
     const existing = await this.userModel.findOne({ email });
-    if (existing) throw new ConflictException('User already exists');
+    if (existing) {
+      throw new ConflictException('User already exists');
+    }
     const hash = await bcrypt.hash(password, 10);
     const user = new this.userModel({
       email,
@@ -42,13 +44,47 @@ export class AuthService {
     return null;
   }
 
-  async login(email: string, password: string) {
-    const user = await this.validateUser(email, password);
-    if (!user) throw new UnauthorizedException('Invalid credentials');
+  async findUserByEmail(email: string): Promise<User | null> {
+    return this.userModel.findOne({ email }).exec();
+  }
+
+  private generateJwt(user: User) {
     const payload = { sub: user._id, email: user.email };
     return {
       access_token: this.jwtService.sign(payload),
       user: { id: user._id, email: user.email, displayName: user.displayName },
     };
+  }
+
+  async login(email: string, password: string) {
+    const user = await this.validateUser(email, password);
+    if (!user) throw new UnauthorizedException('Invalid credentials');
+    return this.generateJwt(user);
+  }
+
+  async validateGoogleUser(profile: any): Promise<any> {
+    console.log('Google profile:', profile);
+    if (!profile) throw new Error('Google profile is undefined');
+    const { id, emails, displayName } = profile;
+    const email = emails[0].value;
+
+    // Try to find the user in your DB by Google ID or email.
+    let user = await this.userModel.findOne({ email });
+
+    if (!user) {
+      user = await this.userModel.create({
+        email,
+        googleId: id,
+        name: displayName,
+      });
+    }
+
+    if (id !== user?.googleId) {
+      // If the Google ID doesn't match, update it
+      user.googleId = id;
+      await user.save();
+    }
+
+    return this.generateJwt(user);
   }
 }

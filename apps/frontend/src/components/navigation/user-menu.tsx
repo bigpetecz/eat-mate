@@ -1,6 +1,5 @@
 'use client';
 
-import * as React from 'react';
 import Link from 'next/link';
 import { useTranslation } from 'react-i18next';
 
@@ -12,16 +11,34 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuthStore } from '@/app/auth/authStore';
+import { useAuthStore, User } from '@/app/auth/authStore';
 import { BookIcon, LogInIcon, SettingsIcon } from 'lucide-react';
+import { FC, useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 
-export const UserMenu: React.FC = () => {
+interface UserProps {
+  user: User;
+}
+
+export const UserMenu: FC<UserProps> = ({ user }) => {
   const { t } = useTranslation();
-  const user = useAuthStore((s) => s.user);
   const logout = useAuthStore((s) => s.logout);
-  const [menuOpen, setMenuOpen] = React.useState(false);
-
-  React.useEffect(() => {
+  const [menuOpen, setMenuOpen] = useState(false);
+  const router = useRouter();
+  const handleLogout = async () => {
+    try {
+      await fetch('http://localhost:4000/api/auth/logout', {
+        method: 'POST',
+        cache: 'no-store',
+        credentials: 'include',
+      });
+      logout();
+      window.location.replace('/'); // Forces a full reload and user re-fetch
+    } catch (e) {
+      console.error('Logout failed:', e);
+    }
+  };
+  useEffect(() => {
     const trigger = document.querySelector('[data-radix-popper-anchor]');
 
     if (menuOpen) {
@@ -48,7 +65,7 @@ export const UserMenu: React.FC = () => {
 
   return (
     <DropdownMenu onOpenChange={setMenuOpen}>
-      <DropdownMenuTrigger asChild>
+      <DropdownMenuTrigger asChild className="cursor-pointer">
         <button
           type="button"
           className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
@@ -84,13 +101,13 @@ export const UserMenu: React.FC = () => {
             </div>
             <DropdownMenuSeparator />
             <Link href="/settings">
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
                 <SettingsIcon className="size-4" />
                 {t('Settings')}
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={logout}>
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
               <LogInIcon className="size-4" />
               {t('Logout')}
             </DropdownMenuItem>
@@ -98,17 +115,17 @@ export const UserMenu: React.FC = () => {
         ) : (
           <>
             <Link href="/sign-in">
-              <DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer">
                 <LogInIcon className="size-4" />
                 {t('Sign In')}
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
-            <Link href="/register">
-              <DropdownMenuItem asChild>
+            <Link href="/sign-up">
+              <DropdownMenuItem asChild className="cursor-pointer">
                 <div className="flex items-center gap-2">
                   <BookIcon className="size-4" />
-                  {t('Register')}
+                  {t('Sign up')}
                 </div>
               </DropdownMenuItem>
             </Link>
