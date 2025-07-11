@@ -10,7 +10,7 @@ interface Recipe {
   title: string;
   country?: string;
   createdAt: string;
-  images?: { url: string; description?: string }[];
+  images?: string[];
   description?: string;
   prepTime?: number;
   cookTime?: number;
@@ -42,10 +42,10 @@ export default async function RecipePage({ params }: RecipePageProps) {
         {/* Hero section */}
         <div className="rounded-lg p-6 flex flex-col md:flex-row gap-8 items-start bg-muted">
           {/* Image left, content right */}
-          {recipe.images?.[0]?.url ? (
+          {recipe.images?.[0] ? (
             <Image
-              src={recipe.images[0].url}
-              alt={recipe.images[0].description || recipe.title}
+              src={recipe.images[0]}
+              alt={recipe.title}
               width={320}
               height={256}
               className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-white"

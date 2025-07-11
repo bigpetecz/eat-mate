@@ -50,9 +50,9 @@ export default function HomePage() {
                 >
                   <Card className="pt-0">
                     <CardContent className="p-0">
-                      {recipe.images?.[0]?.url ? (
+                      {recipe.images?.[0] ? (
                         <Image
-                          src={recipe.images[0].url}
+                          src={recipe.images[0]}
                           alt={recipe.title}
                           width={600}
                           height={256}

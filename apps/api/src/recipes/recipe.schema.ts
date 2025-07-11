@@ -29,8 +29,8 @@ export class Recipe extends mongoose.Document {
   @Prop({ required: true })
   description: string;
 
-  @Prop()
-  images: Image[];
+  @Prop({ type: [String], default: [] })
+  images: string[];
 
   @Prop()
   prepTime: number;

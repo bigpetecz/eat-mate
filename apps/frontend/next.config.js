@@ -26,7 +26,7 @@ const mergedConfig = composePlugins(...plugins)(nextConfig);
 module.exports = {
   ...mergedConfig,
   images: {
-    domains: ['images.unsplash.com'],
+    domains: ['images.unsplash.com', 'res.cloudinary.com'],
   },
   async rewrites() {
     return [

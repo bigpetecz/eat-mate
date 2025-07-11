@@ -20,11 +20,39 @@ import apiClient from '@/app/apiClient';
 import { toast } from 'sonner';
 import { User } from '@/app/auth/authStore';
 import { useRouter } from 'next/navigation';
+import { useState } from 'react';
+import {
+  FileUpload,
+  FileUploadDropzone,
+  FileUploadTrigger,
+  FileUploadList,
+  FileUploadItem,
+  FileUploadItemPreview,
+  FileUploadItemMetadata,
+  FileUploadItemDelete,
+} from '@/components/ui/file-uploader';
+import { Upload, X } from 'lucide-react';
 
 export interface RecipeFormProps {
-  defaultValues: any;
+  defaultValues: RecipeFormValues;
   user: User;
 }
+
+type Ingredient = {
+  name: string;
+  quantity: string;
+};
+
+type RecipeFormValues = {
+  title: string;
+  description: string;
+  country?: string;
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  ingredients: Ingredient[];
+  instructions: string[];
+};
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
@@ -87,12 +115,16 @@ const countries = [
 ];
 
 const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
-  const form = useForm({
+  const form = useForm<RecipeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
-
   const router = useRouter();
+  const [files, setFiles] = useState<File[]>([]);
+  const onFileReject = (file: File, message: string) => {
+    // You can show a toast or error message here
+    toast.error(`${file.name}: ${message}`);
+  };
 
   function getFlagEmoji(countryCode: string) {
     return countryCode
@@ -102,9 +134,22 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
       );
   }
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: RecipeFormValues) => {
     try {
-      await apiClient.post('/recipes', { ...data, author: user._id });
+      // 1. Create recipe (without images)
+      const res = await apiClient.post('/recipes', {
+        ...data,
+        author: user._id,
+      });
+      const recipeId = res.data._id || res.data.id;
+      // 2. Upload images if any
+      if (files.length > 0 && recipeId) {
+        const formData = new FormData();
+        files.forEach((file) => formData.append('files', file));
+        await apiClient.post(`/recipes/${recipeId}/images`, formData, {
+          headers: { 'Content-Type': 'multipart/form-data' },
+        });
+      }
       toast('Recipe saved!');
       router.push('/');
     } catch (error) {
@@ -118,6 +163,7 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
       <form
         onSubmit={form.handleSubmit(onSubmit)}
         className="space-y-8 mx-auto"
+        encType="multipart/form-data"
       >
         <FormField
           control={form.control}
@@ -218,7 +264,7 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
                 List all ingredients and their quantities.
               </FormDescription>
               <div className="space-y-2">
-                {field.value.map((ing: any, idx: number) => (
+                {field.value.map((ing: Ingredient, idx: number) => (
                   <div key={idx} className="flex gap-2">
                     <Input
                       placeholder="Name"
@@ -243,7 +289,7 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
                       variant="ghost"
                       onClick={() => {
                         const newArr = field.value.filter(
-                          (_: any, i: number) => i !== idx
+                          (_: Ingredient, i: number) => i !== idx
                         );
                         field.onChange(newArr);
                       }}
@@ -291,9 +337,10 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
                     <Button
                       type="button"
                       variant="ghost"
+                      className="cursor-pointer"
                       onClick={() => {
                         const newArr = field.value.filter(
-                          (_: any, i: number) => i !== idx
+                          (_: string, i: number) => i !== idx
                         );
                         field.onChange(newArr);
                       }}
@@ -305,6 +352,7 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
                 <Button
                   type="button"
                   variant="outline"
+                  className="cursor-pointer"
                   onClick={() => field.onChange([...field.value, ''])}
                 >
                   Add Step
@@ -314,7 +362,60 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
             </FormItem>
           )}
         />
-        <Button type="submit">Submit</Button>
+        {/* Images Upload */}
+        <FormItem>
+          <FormLabel>Images</FormLabel>
+          <FormDescription>
+            Upload 2 great photos of your finished recipe. <br />
+            Good photos make your recipe more appealing and help others try it!
+          </FormDescription>
+          <FileUpload
+            maxFiles={2}
+            maxSize={5 * 1024 * 1024}
+            accept="image/*"
+            value={files}
+            onValueChange={setFiles}
+            onFileReject={onFileReject}
+            multiple
+          >
+            <FileUploadDropzone>
+              <div className="flex flex-col items-center gap-1">
+                <div className="flex items-center justify-center rounded-full border p-2.5">
+                  <Upload className="size-6 text-muted-foreground" />
+                </div>
+                <p className="font-medium text-sm">Drag & drop files here</p>
+                <p className="text-muted-foreground text-xs">
+                  Or click to browse (max 2 files, up to 5MB each)
+                </p>
+              </div>
+              <FileUploadTrigger asChild>
+                <Button variant="outline" size="sm" className="mt-2 w-fit">
+                  Browse files
+                </Button>
+              </FileUploadTrigger>
+            </FileUploadDropzone>
+            <FileUploadList>
+              {files.map((file, index) => (
+                <FileUploadItem key={index} value={file}>
+                  <FileUploadItemPreview />
+                  <FileUploadItemMetadata />
+                  <FileUploadItemDelete asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="size-7 cursor-pointer"
+                    >
+                      <X />
+                    </Button>
+                  </FileUploadItemDelete>
+                </FileUploadItem>
+              ))}
+            </FileUploadList>
+          </FileUpload>
+        </FormItem>
+        <Button className="cursor-pointer" type="submit">
+          Submit
+        </Button>
       </form>
     </Form>
   );
