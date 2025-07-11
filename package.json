@@ -2,9 +2,7 @@
   "name": "@eat-mate/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {
-    "vercel-build": "ls -la apps/frontend/public && nx build frontend"
-  },
+  "scripts": {},
   "private": true,
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",
@@ -18,6 +16,7 @@
     "@radix-ui/react-label": "^2.1.7",
     "@radix-ui/react-slot": "^1.2.3",
     "@tailwindcss/postcss": "^4.1.11",
+    "@vercel/analytics": "^1.5.0",
     "axios": "^1.6.0",
     "bcryptjs": "^3.0.2",
     "class-transformer": "^0.5.1",

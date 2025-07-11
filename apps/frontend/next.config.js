@@ -2,7 +2,7 @@
 
 const { composePlugins, withNx } = require('@nx/next');
 
-const apiUrl = process.env.NEXT_API_URL;
+const apiUrl = process.env.NEXT_API_PROXY_URL;
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}

@@ -18,6 +18,8 @@ async function bootstrap() {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     exposedHeaders: ['Set-Cookie'],
   });
+  const server = app.getHttpAdapter().getInstance();
+  server.set('trust proxy', true);
   app.use(cookieParser());
   const globalPrefix = 'api';
   app.setGlobalPrefix(globalPrefix);

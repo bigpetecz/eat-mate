@@ -12,10 +12,14 @@ import { AuthGuard } from '@nestjs/passport';
 import type { Request, Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { User } from './user.decorator';
+import { ConfigService } from '@nestjs/config';
 
 @Controller('auth')
 export class AuthController {
-  constructor(private readonly authService: AuthService) {}
+  constructor(
+    private readonly authService: AuthService,
+    private readonly configService: ConfigService
+  ) {}
 
   @Post('register')
   async register(
@@ -32,7 +36,7 @@ export class AuthController {
     // Clear the JWT cookie
     res.clearCookie('token', {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: this.configService.get('NODE_ENV') === 'production',
       sameSite: 'lax',
       path: '/',
     });
@@ -84,9 +88,9 @@ export class AuthController {
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
     // Redirect without token in URL
-    const redirectUrl = `http://localhost:3000/auth/callback?state=${encodeURIComponent(
-      state || '/'
-    )}`;
+    const redirectUrl = `${this.configService.get(
+      'FRONTEND_URL'
+    )}/auth/callback?state=${encodeURIComponent(state || '/')}`;
     return res.redirect(redirectUrl);
   }
 

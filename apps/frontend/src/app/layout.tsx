@@ -6,6 +6,7 @@ import { UserMenu } from '@/components/navigation/user-menu';
 import { Toaster } from '@/components/ui/toaster';
 import Link from 'next/link';
 import { getUser } from './auth/getUser';
+import { Analytics } from '@vercel/analytics/next';
 
 export const metadata = {
   title: 'Eat Mate - Your source for delicious recipes',
@@ -32,7 +33,10 @@ export default async function RootLayout({
             </div>
           </div>
         </header>
-        <main className="pt-16 min-h-[calc(100vh-4rem)]">{children}</main>
+        <main className="pt-16 min-h-[calc(100vh-4rem)]">
+          {children}
+          <Analytics />
+        </main>
         <Toaster />
         <footer className="border-t px-6 py-4 text-center text-sm text-muted-foreground">
           © {new Date().getFullYear()} Eat Mate. All rights reserved.
