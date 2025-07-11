@@ -15,11 +15,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Combobox } from '@/components/ui/combobox';
-import { FC } from 'react';
-import apiClient from '@/app/apiClient';
+import { FC, useCallback } from 'react';
+
 import { toast } from 'sonner';
-import { User } from '@/app/auth/authStore';
-import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import {
   FileUpload,
@@ -35,23 +33,27 @@ import { Upload, X } from 'lucide-react';
 
 export interface RecipeFormProps {
   defaultValues: RecipeFormValues;
-  user: User;
+  onSubmit: (data: RecipeFormValues, files: File[]) => Promise<void>;
+  defaultFiles?: File[];
+  onRemoveImage?: (url: string) => void;
 }
 
-type Ingredient = {
-  name: string;
-  quantity: string;
-};
-
-type RecipeFormValues = {
+// Move RecipeFormValues type export to RecipeForm.tsx if not already exported
+// If not exported, define locally for now
+export type RecipeFormValues = {
   title: string;
   description: string;
   country?: string;
   prepTime: number;
   cookTime: number;
   servings: number;
-  ingredients: Ingredient[];
+  ingredients: { name: string; quantity: string }[];
   instructions: string[];
+};
+
+export type Ingredient = {
+  name: string;
+  quantity: string;
 };
 
 const formSchema = z.object({
@@ -114,54 +116,33 @@ const countries = [
   // ...add all other countries as needed
 ];
 
-const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
+const RecipeForm: FC<RecipeFormProps> = ({
+  defaultValues,
+  onSubmit,
+  defaultFiles,
+  onRemoveImage,
+}) => {
   const form = useForm<RecipeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
-  const router = useRouter();
-  const [files, setFiles] = useState<File[]>([]);
+  const [files, setFiles] = useState<File[]>(defaultFiles || []);
   const onFileReject = (file: File, message: string) => {
     // You can show a toast or error message here
     toast.error(`${file.name}: ${message}`);
   };
 
-  function getFlagEmoji(countryCode: string) {
-    return countryCode
-      .toUpperCase()
-      .replace(/./g, (char) =>
-        String.fromCodePoint(127397 + char.charCodeAt(0))
-      );
-  }
-
-  const onSubmit = async (data: RecipeFormValues) => {
-    try {
-      // 1. Create recipe (without images)
-      const res = await apiClient.post('/recipes', {
-        ...data,
-        author: user._id,
-      });
-      const recipeId = res.data._id || res.data.id;
-      // 2. Upload images if any
-      if (files.length > 0 && recipeId) {
-        const formData = new FormData();
-        files.forEach((file) => formData.append('files', file));
-        await apiClient.post(`/recipes/${recipeId}/images`, formData, {
-          headers: { 'Content-Type': 'multipart/form-data' },
-        });
-      }
-      toast('Recipe saved!');
-      router.push('/');
-    } catch (error) {
-      toast.error('Failed to save recipe.');
-      console.error(error);
-    }
-  };
+  const onFormSubmit = useCallback(
+    async (data: RecipeFormValues) => {
+      onSubmit(data, files);
+    },
+    [files, onSubmit]
+  );
 
   return (
     <Form {...form}>
       <form
-        onSubmit={form.handleSubmit(onSubmit)}
+        onSubmit={form.handleSubmit(onFormSubmit)}
         className="space-y-8 mx-auto"
         encType="multipart/form-data"
       >
@@ -202,7 +183,6 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
                   options={countries.map((country) => ({
                     value: country.name,
                     label: country.name,
-                    icon: getFlagEmoji(country.code),
                   }))}
                   value={field.value}
                   onChange={field.onChange}
@@ -404,6 +384,7 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
                       variant="ghost"
                       size="icon"
                       className="size-7 cursor-pointer"
+                      onClick={() => onRemoveImage?.(file.name)}
                     >
                       <X />
                     </Button>
@@ -414,7 +395,7 @@ const RecipeForm: FC<RecipeFormProps> = ({ defaultValues, user }) => {
           </FileUpload>
         </FormItem>
         <Button className="cursor-pointer" type="submit">
-          Submit
+          {defaultValues.title !== '' ? 'Save recipe' : 'Create Recipe'}
         </Button>
       </form>
     </Form>

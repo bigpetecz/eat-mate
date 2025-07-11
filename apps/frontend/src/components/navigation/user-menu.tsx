@@ -66,7 +66,7 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
       <DropdownMenuTrigger asChild className="cursor-pointer">
         <button
           type="button"
-          className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring"
+          className="flex items-center gap-2 px-2 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         >
           <Avatar className="h-8 w-8 rounded-lg grayscale">
             <AvatarImage

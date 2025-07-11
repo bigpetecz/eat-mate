@@ -17,6 +17,7 @@ interface Recipe {
   servings?: number;
   ingredients?: { name: string; quantity: string }[];
   instructions?: string[];
+  author: string;
 }
 
 interface RecipePageProps {
@@ -60,7 +61,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
           <div className="flex-1 flex flex-col gap-3 w-full">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 w-full">
               <h1 className="text-3xl font-bold flex-1">{recipe.title}</h1>
-              <RecipeActions />
+              <RecipeActions recipeId={recipe._id} authorId={recipe.author} />
             </div>
             <p className="text-lg text-muted-foreground mt-1">
               {recipe.description}

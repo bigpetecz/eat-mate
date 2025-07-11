@@ -14,6 +14,7 @@ import {
   UsePipes,
   UseInterceptors,
   UploadedFiles,
+  Put,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
@@ -62,7 +63,7 @@ export class RecipesController {
 
   // Update a recipe by ID (with ObjectId validation)
   @UseGuards(JwtAuthGuard)
-  @Patch(':id')
+  @Put(':id')
   async patchUpdate(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
