@@ -50,12 +50,6 @@
           "buildTarget": "frontend:build",
           "dev": true
         }
-      },
-      "dev": {
-        "executor": "@nx/next:dev",
-        "options": {
-          "buildTarget": "frontend:build"
-        }
       }
     }
   }

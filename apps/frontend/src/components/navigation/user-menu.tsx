@@ -115,7 +115,7 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
             <Link href="/sign-in">
               <DropdownMenuItem className="cursor-pointer">
                 <LogInIcon className="size-4" />
-                {t('Sign In')}
+                {t('Login')}
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
