@@ -2,6 +2,8 @@
 
 const { composePlugins, withNx } = require('@nx/next');
 
+const apiUrl = process.env.NEXT_API_URL;
+
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
  **/
@@ -24,7 +26,14 @@ const mergedConfig = composePlugins(...plugins)(nextConfig);
 module.exports = {
   ...mergedConfig,
   images: {
-    ...(mergedConfig.images || {}),
     domains: ['images.unsplash.com'],
+  },
+  async rewrites() {
+    return [
+      {
+        source: '/api/:path*',
+        destination: `${apiUrl}/:path*`,
+      },
+    ];
   },
 };

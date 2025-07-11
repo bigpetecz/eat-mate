@@ -14,7 +14,6 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore, User } from '@/app/auth/authStore';
 import { BookIcon, LogInIcon, SettingsIcon } from 'lucide-react';
 import { FC, useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 
 interface UserProps {
   user: User;
@@ -24,10 +23,9 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
   const { t } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
   const [menuOpen, setMenuOpen] = useState(false);
-  const router = useRouter();
   const handleLogout = async () => {
     try {
-      await fetch('http://localhost:4000/api/auth/logout', {
+      await fetch('api/auth/logout', {
         method: 'POST',
         cache: 'no-store',
         credentials: 'include',
@@ -72,7 +70,7 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
         >
           <Avatar className="h-8 w-8 rounded-lg grayscale">
             <AvatarImage
-              src={user?.avatar || ''}
+              src={user?.picture || ''}
               alt={user?.displayName || 'User'}
             />
             <AvatarFallback className="rounded-lg">{initials}</AvatarFallback>

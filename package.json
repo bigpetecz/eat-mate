@@ -2,7 +2,9 @@
   "name": "@eat-mate/source",
   "version": "0.0.0",
   "license": "MIT",
-  "scripts": {},
+  "scripts": {
+    "vercel-build": "ls -la apps/frontend/public && nx build frontend"
+  },
   "private": true,
   "dependencies": {
     "@hookform/resolvers": "^5.1.1",

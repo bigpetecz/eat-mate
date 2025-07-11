@@ -27,10 +27,13 @@ export default async function RecipePage({ params }: RecipePageProps) {
   let recipe: Recipe | null = null;
   try {
     const res = await apiClient.get(`/recipes/${(await params).id}`);
+
     recipe = res.data;
-  } catch {
+  } catch (error) {
+    console.error('Failed to fetch recipe:', error);
     notFound();
   }
+
   if (!recipe) return notFound();
 
   return (

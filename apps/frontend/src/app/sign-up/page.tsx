@@ -30,7 +30,7 @@ export default function RegisterPage() {
     setServerError(null);
     try {
       // TODO: Replace with your actual registration API endpoint
-      const res = await fetch('http://localhost:4000/api/auth/register', {
+      const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data),

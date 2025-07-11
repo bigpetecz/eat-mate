@@ -63,7 +63,6 @@ export class AuthService {
   }
 
   async validateGoogleUser(profile: any): Promise<any> {
-    console.log('Google profile:', profile);
     if (!profile) throw new Error('Google profile is undefined');
     const { id, emails, displayName } = profile;
     const email = emails[0].value;
@@ -76,12 +75,14 @@ export class AuthService {
         email,
         googleId: id,
         name: displayName,
+        picture: profile.photos?.[0]?.value || '',
       });
     }
 
     if (id !== user?.googleId) {
       // If the Google ID doesn't match, update it
       user.googleId = id;
+      user.picture = profile.photos?.[0]?.value || '';
       await user.save();
     }
 

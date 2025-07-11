@@ -13,7 +13,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import apiClient from '@/app/apiClient';
 import { useAuthStore } from '@/app/auth/authStore';
-import { redirect } from 'next/navigation';
 
 export function LoginForm({
   className,
@@ -41,7 +40,7 @@ export function LoginForm({
     } finally {
       setLoading(false);
     }
-    redirect('/');
+    window.location.href = '/';
   };
 
   return (
@@ -102,7 +101,7 @@ export function LoginForm({
                   type="button"
                   disabled={loading}
                   onClick={() => {
-                    window.location.href = `http://localhost:4000/api/auth/google`;
+                    window.location.href = `/api/auth/google`;
                   }}
                 >
                   Login with Google
