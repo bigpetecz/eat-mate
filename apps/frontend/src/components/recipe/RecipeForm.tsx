@@ -143,7 +143,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onFormSubmit)}
-        className="space-y-8 mx-auto w-full max-w-2xl px-4 sm:px-6 md:px-8"
+        className="space-y-8 mx-auto w-full max-w-2xl"
         encType="multipart/form-data"
       >
         <div className="flex flex-col md:flex-row gap-4 w-full">

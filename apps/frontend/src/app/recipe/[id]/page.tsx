@@ -2,8 +2,9 @@ import { notFound } from 'next/navigation';
 
 import Image from 'next/image';
 import { RecipeActions } from './RecipeActions';
-
 import apiClient from '../../apiClient';
+import { Card } from '@/components/ui/card';
+import ServingsIngredients from './ServingsIngredients';
 
 interface Recipe {
   _id: string;
@@ -14,10 +15,32 @@ interface Recipe {
   description?: string;
   prepTime?: number;
   cookTime?: number;
-  servings?: number;
-  ingredients?: { name: string; quantity: string }[];
+  servings: number;
+  ingredients: { name: string; quantity: string }[];
   instructions?: string[];
   author: string;
+  ai?: {
+    nutrition?: {
+      calories?: number;
+      protein?: number;
+      fat?: number;
+      carbs?: number;
+      fiber?: number;
+      sugar?: number;
+      sodium?: number;
+    };
+    difficulty?: string;
+    estimatedCost?: number;
+    dietLabels?: string[];
+    keywords?: string[];
+    relatedRecipes?: string[];
+    techniques?: string[];
+    specialAttributes?: string[];
+    winePairing?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    hash?: string;
+  };
 }
 
 interface RecipePageProps {
@@ -41,7 +64,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
     <div className="bg-muted">
       <div className="max-w-6xl mx-auto px-4 pb-8">
         {/* Hero section */}
-        <div className="rounded-lg p-6 flex flex-col md:flex-row gap-8 items-start bg-muted">
+        <div className="rounded-lg p-6 flex flex-col md:flex-row gap-8 items-center bg-muted min-h-[25rem]">
           {/* Image left, content right */}
           {recipe.images?.[0] ? (
             <Image
@@ -108,61 +131,142 @@ export default async function RecipePage({ params }: RecipePageProps) {
                 </svg>
                 Cook: {recipe.cookTime ?? '-'} min
               </span>
-              <span className="flex items-center gap-1 text-sm">
-                <svg
-                  className="w-4 h-4 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M8 7V3m8 4V3M3 11h18M5 19h14a2 2 0 0 0 2-2v-7H3v7a2 2 0 0 0 2 2z" />
-                </svg>
-                {new Date(recipe.createdAt).toLocaleDateString()}
-              </span>
-              <span className="flex items-center gap-1 text-sm">
-                <svg
-                  className="w-4 h-4 text-muted-foreground"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M4 21v-7a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v7" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                Servings: {recipe.servings ?? '-'}
-              </span>
             </div>
           </div>
         </div>
+        {/* AI-enriched info section */}
+        <Card className="py-8">
+          <div className="px-8">
+            <h2 className="text-xl font-semibold mb-4">
+              Additional Information
+            </h2>
+            <div className="flex flex-row flex-wrap md:flex-nowrap gap-6">
+              <div className="w-full md:w-1/2 flex-shrink-0 flex-grow-0 gap-6">
+                <div>
+                  <h3 className="font-medium mb-2">Difficulty & Cost</h3>
+                  <p>
+                    Difficulty: <b>{recipe.ai?.difficulty ?? '-'}</b>
+                  </p>
+                  <p>
+                    Estimated Cost:{' '}
+                    <b>
+                      {recipe.ai?.estimatedCost != null
+                        ? `€${recipe.ai.estimatedCost}`
+                        : '-'}{' '}
+                      per serving
+                    </b>
+                  </p>
+                  <p>
+                    Wine Pairing: <b>{recipe.ai?.winePairing ?? '-'}</b>
+                  </p>
+                </div>
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2">Diet Labels</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {recipe.ai?.dietLabels?.length
+                      ? recipe.ai.dietLabels.map((d) => (
+                          <span
+                            key={d}
+                            className="px-2 py-1 bg-muted rounded text-xs"
+                          >
+                            {d}
+                          </span>
+                        ))
+                      : '-'}
+                  </div>
+                </div>
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2">Techniques</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {recipe.ai?.techniques?.length
+                      ? recipe.ai.techniques.map((t) => (
+                          <span
+                            key={t}
+                            className="px-2 py-1 bg-muted rounded text-xs"
+                          >
+                            {t}
+                          </span>
+                        ))
+                      : '-'}
+                  </div>
+                </div>
+              </div>
+              <div className="w-full md:w-1/2 flex-shrink-0 flex-grow-0">
+                <div>
+                  <h3 className="font-medium mb-2">Nutrition per serving</h3>
+                  <ul className="list-disc list-inside">
+                    <li>
+                      Calories:{' '}
+                      {recipe.ai?.nutrition?.calories != null
+                        ? `${recipe.ai.nutrition.calories} kcal`
+                        : '-'}
+                    </li>
+                    <li>
+                      Protein:{' '}
+                      {recipe.ai?.nutrition?.protein != null
+                        ? `${recipe.ai.nutrition.protein} g`
+                        : '-'}
+                    </li>
+                    <li>
+                      Fat:{' '}
+                      {recipe.ai?.nutrition?.fat != null
+                        ? `${recipe.ai.nutrition.fat} g`
+                        : '-'}
+                    </li>
+                    <li>
+                      Carbs:{' '}
+                      {recipe.ai?.nutrition?.carbs != null
+                        ? `${recipe.ai.nutrition.carbs} g`
+                        : '-'}
+                    </li>
+                    <li>
+                      Fiber:{' '}
+                      {recipe.ai?.nutrition?.fiber != null
+                        ? `${recipe.ai.nutrition.fiber} g`
+                        : '-'}
+                    </li>
+                    <li>
+                      Sugar:{' '}
+                      {recipe.ai?.nutrition?.sugar != null
+                        ? `${recipe.ai.nutrition.sugar} g`
+                        : '-'}
+                    </li>
+                    <li>
+                      Sodium:{' '}
+                      {recipe.ai?.nutrition?.sodium != null
+                        ? `${recipe.ai.nutrition.sodium} mg`
+                        : '-'}
+                    </li>
+                  </ul>
+                </div>
+                <div className="mt-6">
+                  <h3 className="font-medium mb-2">Special Attributes</h3>
+                  <div className="flex flex-wrap gap-2">
+                    {recipe.ai?.specialAttributes?.length
+                      ? recipe.ai.specialAttributes.map((s) => (
+                          <span
+                            key={s}
+                            className="px-2 py-1 bg-muted rounded text-xs"
+                          >
+                            {s}
+                          </span>
+                        ))
+                      : '-'}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+        {/* ...existing ingredients/instructions... */}
       </div>
       {/* Full-width white section for ingredients and instructions */}
       <div className="bg-background w-full py-10">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div>
-            <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-              <svg
-                className="w-5 h-5 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M4 21v-7a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v7" />
-                <circle cx="12" cy="7" r="4" />
-              </svg>
-              Ingredients
-            </h2>
-            <ul className="list-disc list-inside space-y-1">
-              {recipe.ingredients?.map((ing, idx) => (
-                <li key={idx}>
-                  <span className="font-medium">{ing.name}</span>:{' '}
-                  {ing.quantity}
-                </li>
-              ))}
-            </ul>
-          </div>
+          <ServingsIngredients
+            servings={recipe.servings}
+            ingredients={recipe.ingredients}
+          />
           <div>
             <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
               <svg

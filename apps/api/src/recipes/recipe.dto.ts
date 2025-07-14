@@ -28,6 +28,88 @@ class ImageDto {
   description: string;
 }
 
+class NutritionDto {
+  @IsOptional()
+  @IsNumber()
+  calories?: number;
+
+  @IsOptional()
+  @IsNumber()
+  protein?: number;
+
+  @IsOptional()
+  @IsNumber()
+  fat?: number;
+
+  @IsOptional()
+  @IsNumber()
+  carbs?: number;
+
+  @IsOptional()
+  @IsNumber()
+  fiber?: number;
+
+  @IsOptional()
+  @IsNumber()
+  sugar?: number;
+
+  @IsOptional()
+  @IsNumber()
+  sodium?: number;
+}
+
+class AiInfoDto {
+  @IsOptional()
+  @IsNumber()
+  estimatedCalories?: number;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => NutritionDto)
+  nutrition?: NutritionDto;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  dietLabels?: string[];
+
+  @IsOptional()
+  @IsString()
+  winePairing?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  keywords?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  relatedRecipes?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  techniques?: string[];
+
+  @IsOptional()
+  @IsString()
+  difficulty?: string;
+
+  @IsOptional()
+  @IsNumber()
+  estimatedCost?: number;
+
+  @IsOptional()
+  @IsString()
+  hash?: string;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  specialAttributes?: string[];
+}
+
 export class CreateRecipeDto {
   @IsString()
   @IsNotEmpty()
@@ -71,6 +153,11 @@ export class CreateRecipeDto {
   @IsString()
   @IsOptional()
   country?: string;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => AiInfoDto)
+  ai?: AiInfoDto;
 }
 
 export class UpdateRecipeDto extends CreateRecipeDto {}

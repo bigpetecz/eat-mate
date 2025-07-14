@@ -1,0 +1,16 @@
+export enum DietLabel {
+  Vegetarian = 'vegetarian',
+  Vegan = 'vegan',
+  Pescatarian = 'pescatarian',
+  GlutenFree = 'gluten-free',
+  DairyFree = 'dairy-free',
+  NutFree = 'nut-free',
+  SoyFree = 'soy-free',
+  LowCarb = 'low-carb',
+  LowFat = 'low-fat',
+  Paleo = 'paleo',
+  Keto = 'keto',
+  Whole30 = 'whole30',
+  Halal = 'halal',
+  Kosher = 'kosher',
+}

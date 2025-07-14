@@ -83,6 +83,9 @@ export function Navigation() {
             {t('Add recipe')}
           </Link>
         </NavigationMenuItem>
+        <NavigationMenuItem asChild className={navigationMenuTriggerStyle()}>
+          <Link href="/discover">{t('Discover recipes')}</Link>
+        </NavigationMenuItem>
         {/* <NavigationMenuItem>
           <NavigationMenuTrigger>{t('Recipes')}</NavigationMenuTrigger>
           <NavigationMenuContent>

@@ -15,6 +15,7 @@ import {
   UseInterceptors,
   UploadedFiles,
   Put,
+  Query,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, isValidObjectId } from 'mongoose';
@@ -50,6 +51,92 @@ export class RecipesController {
   @Get()
   async findAll() {
     return this.recipeModel.find().exec();
+  }
+
+  // Filter recipes with advanced query params
+  @Get('filter')
+  async filterRecipes(
+    @Query('search') search?: string,
+    @Query('mealType') mealType?: string,
+    @Query('diets') diets?: string | string[],
+    @Query('techniques') techniques?: string | string[],
+    @Query('difficulty') difficulty?: string,
+    @Query('country') country?: string,
+    @Query('prepTimeMin') prepTimeMin?: string,
+    @Query('prepTimeMax') prepTimeMax?: string,
+    @Query('cookTimeMin') cookTimeMin?: string,
+    @Query('cookTimeMax') cookTimeMax?: string,
+    @Query('caloriesMin') caloriesMin?: string,
+    @Query('caloriesMax') caloriesMax?: string
+  ) {
+    const andConditions = [];
+    if (search) {
+      andConditions.push({
+        $or: [
+          { title: { $regex: search, $options: 'i' } },
+          { description: { $regex: search, $options: 'i' } },
+          { tags: { $regex: search, $options: 'i' } },
+          { country: { $regex: search, $options: 'i' } },
+          { 'ingredients.name': { $regex: search, $options: 'i' } },
+          { 'ai.keywords': { $regex: search, $options: 'i' } },
+        ],
+      });
+    }
+    if (mealType) {
+      andConditions.push({ mealType });
+    }
+    if (difficulty) {
+      // Check both root and ai.difficulty for compatibility
+      andConditions.push({
+        $or: [{ difficulty }, { 'ai.difficulty': difficulty }],
+      });
+    }
+    if (country) {
+      andConditions.push({ country });
+    }
+    if (diets) {
+      const arr = Array.isArray(diets) ? diets : [diets];
+      andConditions.push({ 'ai.dietLabels': { $all: arr } });
+    }
+    if (techniques) {
+      const arr = Array.isArray(techniques) ? techniques : [techniques];
+      andConditions.push({ 'ai.techniques': { $all: arr } });
+    }
+    if (prepTimeMin || prepTimeMax) {
+      const prepTimeCond: Record<string, number> = {};
+      if (prepTimeMin) prepTimeCond.$gte = Number(prepTimeMin);
+      if (prepTimeMax) prepTimeCond.$lte = Number(prepTimeMax);
+      andConditions.push({ prepTime: prepTimeCond });
+    }
+    // Only add cookTime filter if not full range (0-240)
+    const cookTimeMinNum = cookTimeMin !== undefined ? Number(cookTimeMin) : 0;
+    const cookTimeMaxNum =
+      cookTimeMax !== undefined ? Number(cookTimeMax) : 240;
+    if (!(cookTimeMinNum === 0 && cookTimeMaxNum === 240)) {
+      const cookTimeCond: Record<string, number> = {};
+      if (cookTimeMinNum > 0) cookTimeCond.$gte = cookTimeMinNum;
+      if (cookTimeMaxNum < 240) cookTimeCond.$lte = cookTimeMaxNum;
+      andConditions.push({
+        $or: [{ cookTime: cookTimeCond }, { cookTime: null }],
+      });
+    }
+    // Only add calories filter if not full range (0-2000)
+    const caloriesMinNum = caloriesMin !== undefined ? Number(caloriesMin) : 0;
+    const caloriesMaxNum =
+      caloriesMax !== undefined ? Number(caloriesMax) : 2000;
+    if (!(caloriesMinNum === 0 && caloriesMaxNum === 2000)) {
+      const calCond: Record<string, number> = {};
+      if (caloriesMinNum > 0) calCond.$gte = caloriesMinNum;
+      if (caloriesMaxNum < 2000) calCond.$lte = caloriesMaxNum;
+      andConditions.push({
+        $or: [
+          { 'ai.nutrition.calories': calCond },
+          { 'ai.nutrition.calories': null },
+        ],
+      });
+    }
+    const query = andConditions.length > 0 ? { $and: andConditions } : {};
+    return this.recipeModel.find(query).exec();
   }
 
   // Get a recipe by ID (with ObjectId validation)

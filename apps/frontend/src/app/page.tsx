@@ -1,19 +1,29 @@
 'use client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import apiClient from './apiClient';
-import Link from 'next/link';
-import Image from 'next/image';
 import { Spinner } from '@/components/ui/spinner';
+import { RecipeCard } from '@/components/recipe/RecipeCard';
+import { useForm } from 'react-hook-form';
+import { useRouter } from 'next/navigation';
 
 export default function HomePage() {
-  const [recipes, setRecipes] = useState<any[]>([]);
+  const [recipes, setRecipes] = useState<any[]>([]); // TODO: Replace any with Recipe type
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const router = useRouter();
+  const { register, handleSubmit, reset } = useForm<{ search: string }>();
+
+  const onSubmit = (data: { search: string }) => {
+    if (data.search && data.search.trim()) {
+      router.push(`/discover?search=${encodeURIComponent(data.search.trim())}`);
+      reset();
+    }
+  };
 
   useEffect(() => {
     apiClient
@@ -30,7 +40,9 @@ export default function HomePage() {
         <h1 className="text-4xl md:text-6xl font-bold mb-4">
           Discover Your Next Favorite Recipe
         </h1>
-        <p className="text-lg mb-8">Cook smarter, filter better, enjoy more.</p>
+        <p className="text-lg mb-8">
+          Cook smarter, discover better, enjoy more.
+        </p>
 
         {/* Carousel */}
         <div className="w-full max-w-5xl overflow-hidden">
@@ -43,68 +55,7 @@ export default function HomePage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               {recipes.slice(0, 3).map((recipe) => (
-                <Link
-                  href={`/recipe/${recipe._id}`}
-                  key={recipe._id}
-                  className="contents"
-                >
-                  <Card className="pt-0">
-                    <CardContent className="p-0">
-                      {recipe.images?.[0] ? (
-                        <Image
-                          src={recipe.images[0]}
-                          alt={recipe.title}
-                          width={600}
-                          height={256}
-                          className="w-full h-64 object-cover rounded-t-lg"
-                          priority={true}
-                        />
-                      ) : (
-                        <div className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-background flex items-center justify-center text-muted-foreground">
-                          No image
-                        </div>
-                      )}
-                      <div className="p-4 pb-0">
-                        <h3 className="text-xl font-semibold">
-                          {recipe.title}
-                        </h3>
-                        <p className="text-muted-foreground mt-2 line-clamp-2">
-                          {recipe.description}
-                        </p>
-                        <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
-                          <span className="flex items-center gap-1">
-                            <svg
-                              width="18"
-                              height="18"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="inline-block"
-                            >
-                              <circle cx="9" cy="9" r="8" />
-                              <path d="M9 4v5l3 3" />
-                            </svg>
-                            {recipe.cookTime || '--'} min
-                          </span>
-                          <span className="flex items-center gap-1">
-                            <svg
-                              width="18"
-                              height="18"
-                              fill="none"
-                              stroke="currentColor"
-                              strokeWidth="2"
-                              className="inline-block"
-                            >
-                              <path d="M12 2C8.13 2 5 5.13 5 9c0 3.87 3.13 7 7 7s7-3.13 7-7c0-3.87-3.13-7-7-7zm0 12c-2.76 0-5-2.24-5-5 0-2.76 2.24-5 5-5s5 2.24 5 5c0 2.76-2.24 5-5 5z" />
-                              <circle cx="12" cy="9" r="2.5" />
-                            </svg>
-                            {recipe.calories || '--'} kcal
-                          </span>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </Link>
+                <RecipeCard key={recipe._id} recipe={recipe} />
               ))}
             </div>
           )}
@@ -113,15 +64,24 @@ export default function HomePage() {
 
       {/* SEARCH */}
       <section className="flex flex-col items-center justify-center py-16">
-        <div className="flex w-full max-w-xl gap-2">
+        <form
+          onSubmit={handleSubmit(onSubmit)}
+          className="flex w-full max-w-xl gap-2"
+        >
           <Input
             placeholder="What do you want to cook today?"
-            className="flex-1"
+            className="flex-1 h-14 text-lg px-6"
+            {...register('search')}
           />
-          <Button variant="default">
-            <SearchIcon className="h-5 w-5 mr-2" /> Search
+          <Button
+            type="submit"
+            variant="default"
+            className="h-14 text-lg cursor-pointer px-4 flex items-center gap-2"
+          >
+            <SearchIcon className="h-6 w-6" />
+            <span>Search</span>
           </Button>
-        </div>
+        </form>
 
         {/* Popular tags */}
         <div className="flex flex-wrap gap-2 mt-6">
