@@ -143,22 +143,48 @@ const RecipeForm: FC<RecipeFormProps> = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onFormSubmit)}
-        className="space-y-8 mx-auto"
+        className="space-y-8 mx-auto w-full max-w-2xl px-4 sm:px-6 md:px-8"
         encType="multipart/form-data"
       >
-        <FormField
-          control={form.control}
-          name="title"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Title</FormLabel>
-              <FormControl>
-                <Input placeholder="Recipe title" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        <div className="flex flex-col md:flex-row gap-4 w-full">
+          <div className="flex-1 min-w-0">
+            <FormField
+              control={form.control}
+              name="title"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Title</FormLabel>
+                  <FormControl>
+                    <Input placeholder="Recipe title" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+          <div className="flex-1 min-w-0">
+            <FormField
+              control={form.control}
+              name="country"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Country</FormLabel>
+                  <FormControl>
+                    <Combobox
+                      options={countries.map((country) => ({
+                        value: country.name,
+                        label: country.name,
+                      }))}
+                      value={field.value}
+                      onChange={field.onChange}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
         <FormField
           control={form.control}
           name="description"
@@ -172,32 +198,12 @@ const RecipeForm: FC<RecipeFormProps> = ({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="country"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Country</FormLabel>
-              <FormControl>
-                <Combobox
-                  options={countries.map((country) => ({
-                    value: country.name,
-                    label: country.name,
-                  }))}
-                  value={field.value}
-                  onChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <div className="flex gap-4">
+        <div className="flex flex-col md:flex-row gap-4 w-full">
           <FormField
             control={form.control}
             name="prepTime"
             render={({ field }) => (
-              <FormItem className="flex-1">
+              <FormItem className="flex-1 min-w-0">
                 <FormLabel>Prep Time (min)</FormLabel>
                 <FormControl>
                   <Input type="number" min={0} {...field} />
@@ -210,7 +216,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
             control={form.control}
             name="cookTime"
             render={({ field }) => (
-              <FormItem className="flex-1">
+              <FormItem className="flex-1 min-w-0">
                 <FormLabel>Cook Time (min)</FormLabel>
                 <FormControl>
                   <Input type="number" min={0} {...field} />
@@ -223,7 +229,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
             control={form.control}
             name="servings"
             render={({ field }) => (
-              <FormItem className="flex-1">
+              <FormItem className="flex-1 min-w-0">
                 <FormLabel>Servings</FormLabel>
                 <FormControl>
                   <Input type="number" min={1} {...field} />
@@ -359,31 +365,41 @@ const RecipeForm: FC<RecipeFormProps> = ({
             multiple
           >
             <FileUploadDropzone>
-              <div className="flex flex-col items-center gap-1">
-                <div className="flex items-center justify-center rounded-full border p-2.5">
-                  <Upload className="size-6 text-muted-foreground" />
+              <div className="flex flex-col items-center gap-1 sm:gap-1 md:gap-2 w-full max-w-xs sm:max-w-xs md:max-w-sm px-2 py-2 sm:px-4 sm:py-4 md:px-6 md:py-6">
+                <div className="flex items-center justify-center rounded-full border p-2 sm:p-2.5 md:p-3">
+                  <Upload className="size-5 sm:size-6 md:size-7 text-muted-foreground" />
                 </div>
-                <p className="font-medium text-sm">Drag & drop files here</p>
-                <p className="text-muted-foreground text-xs">
+                <p className="font-medium text-xs sm:text-sm">
+                  Drag & drop files here
+                </p>
+                <p className="text-muted-foreground text-[10px] sm:text-xs">
                   Or click to browse (max 2 files, up to 5MB each)
                 </p>
               </div>
               <FileUploadTrigger asChild>
-                <Button variant="outline" size="sm" className="mt-2 w-fit">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="mt-2 w-full max-w-[120px] sm:max-w-[160px] md:max-w-[200px] text-xs sm:text-sm py-1 sm:py-2"
+                >
                   Browse files
                 </Button>
               </FileUploadTrigger>
             </FileUploadDropzone>
-            <FileUploadList>
+            <FileUploadList className="space-y-1 sm:space-y-2">
               {files.map((file, index) => (
-                <FileUploadItem key={index} value={file}>
-                  <FileUploadItemPreview />
-                  <FileUploadItemMetadata />
+                <FileUploadItem
+                  key={index}
+                  value={file}
+                  className="min-h-8 sm:min-h-10"
+                >
+                  <FileUploadItemPreview className="size-8 sm:size-10" />
+                  <FileUploadItemMetadata className="text-xs sm:text-sm" />
                   <FileUploadItemDelete asChild>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="size-7 cursor-pointer"
+                      className="size-6 sm:size-7 cursor-pointer"
                       onClick={() => onRemoveImage?.(file.name)}
                     >
                       <X />

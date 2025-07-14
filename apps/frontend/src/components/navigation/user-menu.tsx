@@ -13,7 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore, User } from '@/app/auth/authStore';
 import { BookIcon, LogInIcon, SettingsIcon } from 'lucide-react';
-import { FC, useEffect, useState } from 'react';
+import { FC } from 'react';
 
 interface UserProps {
   user: User;
@@ -22,7 +22,6 @@ interface UserProps {
 export const UserMenu: FC<UserProps> = ({ user }) => {
   const { t } = useTranslation();
   const logout = useAuthStore((s) => s.logout);
-  const [menuOpen, setMenuOpen] = useState(false);
   const handleLogout = async () => {
     try {
       await fetch('api/auth/logout', {
@@ -36,21 +35,6 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
       console.error('Logout failed:', e);
     }
   };
-  useEffect(() => {
-    const trigger = document.querySelector('[data-radix-popper-anchor]');
-
-    if (menuOpen) {
-      const scrollbarWidth =
-        window.innerWidth - document.documentElement.clientWidth;
-      if (trigger) {
-        (trigger as HTMLElement).style.paddingRight = `${scrollbarWidth}px`;
-      }
-    } else {
-      if (trigger) {
-        (trigger as HTMLElement).style.paddingRight = '';
-      }
-    }
-  }, [menuOpen]);
 
   const initials = user?.displayName
     ? user.displayName
@@ -62,13 +46,13 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
     : 'U';
 
   return (
-    <DropdownMenu onOpenChange={setMenuOpen}>
+    <DropdownMenu>
       <DropdownMenuTrigger asChild className="cursor-pointer">
         <button
           type="button"
           className="flex items-center gap-2 px-2 py-1 rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
         >
-          <Avatar className="h-8 w-8 rounded-lg grayscale">
+          <Avatar className="h-8 w-8 rounded-lg">
             <AvatarImage
               src={user?.picture || ''}
               alt={user?.displayName || 'User'}

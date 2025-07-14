@@ -21,7 +21,7 @@ export default async function RootLayout({
 
   return (
     <html lang="en">
-      <body>
+      <body className="w-full">
         <header className="site-header fixed top-0 flex justify-between items-center px-6 h-16 border-b z-30 bg-background/80 backdrop-blur shadow-sm w-full">
           <Link href="/" aria-label="Home">
             <Logo />

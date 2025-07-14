@@ -74,7 +74,7 @@ export class AuthService {
       user = await this.userModel.create({
         email,
         googleId: id,
-        name: displayName,
+        displayName,
         picture: profile.photos?.[0]?.value || '',
       });
     }

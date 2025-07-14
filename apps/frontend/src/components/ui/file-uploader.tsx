@@ -1100,7 +1100,7 @@ const FileUploadItemMetadata = React.forwardRef<
         <>
           <span
             id={itemContext.nameId}
-            className="truncate font-medium text-sm"
+            className="truncate font-medium text-sm max-w-[90px] sm:max-w-[160px]"
           >
             {itemContext.fileState.file.name}
           </span>
