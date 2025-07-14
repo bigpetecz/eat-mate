@@ -49,11 +49,11 @@ export default async function RecipePage({ params }: RecipePageProps) {
               alt={recipe.title}
               width={320}
               height={256}
-              className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-white"
+              className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-background"
               priority
             />
           ) : (
-            <div className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-white flex items-center justify-center text-muted-foreground">
+            <div className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 flex items-center justify-center text-muted-foreground bg-background">
               No image
             </div>
           )}
@@ -138,7 +138,7 @@ export default async function RecipePage({ params }: RecipePageProps) {
         </div>
       </div>
       {/* Full-width white section for ingredients and instructions */}
-      <div className="bg-white w-full py-10">
+      <div className="bg-background w-full py-10">
         <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
           <div>
             <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">

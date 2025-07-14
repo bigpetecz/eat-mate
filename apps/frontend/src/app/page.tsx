@@ -60,7 +60,7 @@ export default function HomePage() {
                           priority={true}
                         />
                       ) : (
-                        <div className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-white flex items-center justify-center text-muted-foreground">
+                        <div className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-background flex items-center justify-center text-muted-foreground">
                           No image
                         </div>
                       )}
