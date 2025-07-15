@@ -40,7 +40,7 @@ export class OpenAIService {
   async generateAiFields(recipe: {
     title: string;
     description?: string;
-    ingredients?: { name: string; quantity: string }[];
+    ingredients: { name: string; quantity: string }[];
     instructions?: string[];
     country?: string;
     dietLabels?: string[];
@@ -78,10 +78,10 @@ export class OpenAIService {
 
 Recipe:
 Title: ${recipe.title}
-Description: ${recipe.description || ''}
-Country: ${recipe.country || ''}
-Servings: ${recipe.servings || 1}
-Ingredients: ${(recipe.ingredients || [])
+Description: ${recipe.description}
+Country: ${recipe.country}
+Servings: ${recipe.servings}
+Ingredients: ${recipe.ingredients
       .map((i) => `${i.name}: ${i.quantity}`)
       .join(', ')}
 Instructions: ${(recipe.instructions || []).join(' ')}

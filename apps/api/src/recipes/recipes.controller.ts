@@ -60,6 +60,7 @@ export class RecipesController {
     @Query('mealType') mealType?: string,
     @Query('diets') diets?: string | string[],
     @Query('techniques') techniques?: string | string[],
+    @Query('specialAttributes') specialAttributes?: string | string[],
     @Query('difficulty') difficulty?: string,
     @Query('country') country?: string,
     @Query('prepTimeMin') prepTimeMin?: string,
@@ -67,7 +68,9 @@ export class RecipesController {
     @Query('cookTimeMin') cookTimeMin?: string,
     @Query('cookTimeMax') cookTimeMax?: string,
     @Query('caloriesMin') caloriesMin?: string,
-    @Query('caloriesMax') caloriesMax?: string
+    @Query('caloriesMax') caloriesMax?: string,
+    @Query('estimatedCostMin') estimatedCostMin?: string,
+    @Query('estimatedCostMax') estimatedCostMax?: string
   ) {
     const andConditions = [];
     if (search) {
@@ -102,6 +105,12 @@ export class RecipesController {
       const arr = Array.isArray(techniques) ? techniques : [techniques];
       andConditions.push({ 'ai.techniques': { $all: arr } });
     }
+    if (specialAttributes) {
+      const arr = Array.isArray(specialAttributes)
+        ? specialAttributes
+        : [specialAttributes];
+      andConditions.push({ 'ai.specialAttributes': { $all: arr } });
+    }
     if (prepTimeMin || prepTimeMax) {
       const prepTimeCond: Record<string, number> = {};
       if (prepTimeMin) prepTimeCond.$gte = Number(prepTimeMin);
@@ -133,6 +142,19 @@ export class RecipesController {
           { 'ai.nutrition.calories': calCond },
           { 'ai.nutrition.calories': null },
         ],
+      });
+    }
+    // Only add estimatedCost filter if not full range (0-30)
+    const estimatedCostMinNum =
+      estimatedCostMin !== undefined ? Number(estimatedCostMin) : 0;
+    const estimatedCostMaxNum =
+      estimatedCostMax !== undefined ? Number(estimatedCostMax) : 30;
+    if (!(estimatedCostMinNum === 0 && estimatedCostMaxNum === 30)) {
+      const costCond: Record<string, number> = {};
+      if (estimatedCostMinNum > 0) costCond.$gte = estimatedCostMinNum;
+      if (estimatedCostMaxNum < 30) costCond.$lte = estimatedCostMaxNum;
+      andConditions.push({
+        $or: [{ 'ai.estimatedCost': costCond }, { 'ai.estimatedCost': null }],
       });
     }
     const query = andConditions.length > 0 ? { $and: andConditions } : {};

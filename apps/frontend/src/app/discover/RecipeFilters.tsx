@@ -29,10 +29,12 @@ interface RecipeFiltersProps {
     mealType: string;
     diets: string[];
     techniques: string[];
+    specialAttributes: string[]; // <-- add
     difficulty: string;
     country: string;
     cookTime: number[];
     calories: number[];
+    estimatedCost: number[]; // <-- add
   };
   onReset: () => void;
   onSearchSubmit: (values: Record<string, unknown>) => void;
@@ -42,66 +44,186 @@ interface RecipeFiltersProps {
 const mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'];
 const difficulties = ['Easy', 'Medium', 'Hard'];
 
-const techniques = [
-  'boiling',
-  'blanching',
-  'steaming',
-  'poaching',
-  'simmering',
-  'stewing',
-  'braising',
-  'roasting',
-  'baking',
-  'grilling',
-  'broiling',
-  'sauteing',
-  'stir-frying',
-  'deep-frying',
-  'pan-frying',
-  'smoking',
-  'pickling',
-  'fermenting',
-  'sous-vide',
-  'raw',
-];
 const dietLabels = [
-  'vegetarian',
-  'vegan',
-  'pescatarian',
-  'gluten-free',
-  'dairy-free',
-  'nut-free',
-  'soy-free',
-  'low-carb',
-  'low-fat',
-  'paleo',
-  'keto',
-  'whole30',
-  'halal',
-  'kosher',
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'pescatarian', label: 'Pescatarian' },
+  { value: 'gluten-free', label: 'Gluten Free' },
+  { value: 'dairy-free', label: 'Dairy Free' },
+  { value: 'nut-free', label: 'Nut Free' },
+  { value: 'soy-free', label: 'Soy Free' },
+  { value: 'low-carb', label: 'Low Carb' },
+  { value: 'low-fat', label: 'Low Fat' },
+  { value: 'paleo', label: 'Paleo' },
+  { value: 'keto', label: 'Keto' },
+  { value: 'whole30', label: 'Whole30' },
+  { value: 'halal', label: 'Halal' },
+  { value: 'kosher', label: 'Kosher' },
 ];
 
+const techniquesOptions = [
+  { value: 'boiling', label: 'Boiling' },
+  { value: 'blanching', label: 'Blanching' },
+  { value: 'steaming', label: 'Steaming' },
+  { value: 'poaching', label: 'Poaching' },
+  { value: 'simmering', label: 'Simmering' },
+  { value: 'stewing', label: 'Stewing' },
+  { value: 'braising', label: 'Braising' },
+  { value: 'roasting', label: 'Roasting' },
+  { value: 'baking', label: 'Baking' },
+  { value: 'grilling', label: 'Grilling' },
+  { value: 'broiling', label: 'Broiling' },
+  { value: 'sauteing', label: 'Sautéing' },
+  { value: 'stir-frying', label: 'Stir-Frying' },
+  { value: 'deep-frying', label: 'Deep-Frying' },
+  { value: 'pan-frying', label: 'Pan-Frying' },
+  { value: 'smoking', label: 'Smoking' },
+  { value: 'pickling', label: 'Pickling' },
+  { value: 'fermenting', label: 'Fermenting' },
+  { value: 'sous-vide', label: 'Sous-vide' },
+  { value: 'raw', label: 'Raw' },
+];
+const specialAttributes = [
+  { value: 'one-pot', label: 'One Pot' },
+  { value: 'one-pan', label: 'One Pan' },
+  { value: 'slow-cooker', label: 'Slow Cooker' },
+  { value: 'instant-pot', label: 'Instant Pot' },
+  { value: 'air-fryer', label: 'Air Fryer' },
+  { value: 'no-cook', label: 'No Cook' },
+  { value: 'freezer-friendly', label: 'Freezer Friendly' },
+  { value: 'meal-prep', label: 'Meal Prep' },
+  { value: '30-minute', label: '30 Minute' },
+  { value: '5-ingredients', label: '5 Ingredients' },
+  { value: 'kid-friendly', label: 'Kid Friendly' },
+];
+
+// List of countries with their own cuisine, all European, major Latin American, Asian, and Arab countries, ordered alphabetically
 const countries = [
+  // Europe
+  'Albania',
+  'Andorra',
+  'Armenia',
+  'Austria',
+  'Azerbaijan',
+  'Belarus',
+  'Belgium',
+  'Bosnia and Herzegovina',
+  'Bulgaria',
+  'Croatia',
+  'Cyprus',
   'Czech Republic',
-  'United States',
-  'Italy',
+  'Denmark',
+  'Estonia',
+  'Finland',
   'France',
-  'India',
-  'Japan',
-  'United Kingdom',
+  'Georgia',
   'Germany',
-  'Spain',
-  'China',
-  'Brazil',
+  'Greece',
+  'Hungary',
+  'Iceland',
+  'Ireland',
+  'Italy',
+  'Kazakhstan',
+  'Kosovo',
+  'Latvia',
+  'Liechtenstein',
+  'Lithuania',
+  'Luxembourg',
+  'Malta',
+  'Moldova',
+  'Monaco',
+  'Montenegro',
+  'Netherlands',
+  'North Macedonia',
+  'Norway',
+  'Poland',
+  'Portugal',
+  'Romania',
   'Russia',
-  'Canada',
-  'Australia',
-  'Mexico',
-  'South Korea',
+  'San Marino',
+  'Serbia',
+  'Slovakia',
+  'Slovenia',
+  'Spain',
+  'Sweden',
+  'Switzerland',
   'Turkey',
+  'Ukraine',
+  'United Kingdom',
+  // Latin America
   'Argentina',
-  'South Africa',
+  'Bolivia',
+  'Brazil',
+  'Chile',
+  'Colombia',
+  'Costa Rica',
+  'Cuba',
+  'Dominican Republic',
+  'Ecuador',
+  'El Salvador',
+  'Guatemala',
+  'Honduras',
+  'Mexico',
+  'Nicaragua',
+  'Panama',
+  'Paraguay',
+  'Peru',
+  'Uruguay',
+  'Venezuela',
+  // Asia
+  'Bangladesh',
+  'Cambodia',
+  'China',
+  'India',
+  'Indonesia',
+  'Japan',
+  'Laos',
+  'Malaysia',
+  'Mongolia',
+  'Myanmar',
+  'Nepal',
+  'Pakistan',
+  'Philippines',
+  'Singapore',
+  'South Korea',
+  'Sri Lanka',
+  'Taiwan',
+  'Thailand',
+  'Vietnam',
+  // Middle East / Arab World
+  'Algeria',
+  'Bahrain',
   'Egypt',
+  'Iraq',
+  'Jordan',
+  'Kuwait',
+  'Lebanon',
+  'Libya',
+  'Morocco',
+  'Oman',
+  'Palestine',
+  'Qatar',
+  'Saudi Arabia',
+  'Sudan',
+  'Syria',
+  'Tunisia',
+  'United Arab Emirates',
+  'Yemen',
+  // Africa (selected)
+  'Ethiopia',
+  'Ghana',
+  'Kenya',
+  'Nigeria',
+  'Senegal',
+  'South Africa',
+  'Tanzania',
+  // Oceania
+  'Australia',
+  'Fiji',
+  'New Zealand',
+  // North America
+  'Canada',
+  'United States',
 ];
 
 export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
@@ -149,31 +271,95 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   const filtersForm = useForm({
     defaultValues,
   });
-  const [showAdvanced, setShowAdvanced] = useState(false);
+  // Determine if any filter (other than search) is set
+  const hasActiveFilters = Boolean(
+    defaultValues.mealType ||
+      defaultValues.difficulty ||
+      defaultValues.country ||
+      (defaultValues.diets && defaultValues.diets.length) ||
+      (defaultValues.techniques && defaultValues.techniques.length) ||
+      (defaultValues.specialAttributes &&
+        defaultValues.specialAttributes.length) ||
+      (defaultValues.cookTime &&
+        (defaultValues.cookTime[0] !== 0 ||
+          defaultValues.cookTime[1] !== 240)) ||
+      (defaultValues.calories &&
+        (defaultValues.calories[0] !== 0 ||
+          defaultValues.calories[1] !== 2000)) ||
+      (defaultValues.estimatedCost &&
+        (defaultValues.estimatedCost[0] !== 0 ||
+          defaultValues.estimatedCost[1] !== 30))
+  );
+
+  // Determine if any advanced filter is set
+  const hasAdvancedFilters = Boolean(
+    (defaultValues.diets && defaultValues.diets.length) ||
+      (defaultValues.techniques && defaultValues.techniques.length) ||
+      (defaultValues.specialAttributes &&
+        defaultValues.specialAttributes.length) ||
+      (defaultValues.cookTime &&
+        (defaultValues.cookTime[0] !== 0 ||
+          defaultValues.cookTime[1] !== 240)) ||
+      (defaultValues.calories &&
+        (defaultValues.calories[0] !== 0 ||
+          defaultValues.calories[1] !== 2000)) ||
+      (defaultValues.estimatedCost &&
+        (defaultValues.estimatedCost[0] !== 0 ||
+          defaultValues.estimatedCost[1] !== 30))
+  );
+
+  // State for active tab and advanced filters
+  const [activeTab, setActiveTab] = useState(
+    hasActiveFilters ? 'filters' : 'search'
+  );
+  const [showAdvanced, setShowAdvanced] = useState(hasAdvancedFilters);
 
   const filterValues = filtersForm.watch();
   const isCaloriesDefault =
     filterValues.calories[0] === 0 && filterValues.calories[1] === 2000;
   const isCookTimeDefault =
     filterValues.cookTime[0] === 0 && filterValues.cookTime[1] === 240;
+  const isEstimatedCostDefault =
+    !filterValues.estimatedCost ||
+    (filterValues.estimatedCost[0] === 0 &&
+      filterValues.estimatedCost[1] === 30);
   const activeCount = [
     filterValues.mealType,
     filterValues.difficulty,
     filterValues.country,
     ...(filterValues.diets || []),
     ...(filterValues.techniques || []),
+    ...(filterValues.specialAttributes || []),
     !isCookTimeDefault ? 'cook' : '',
     !isCaloriesDefault ? 'cal' : '',
+    !isEstimatedCostDefault ? 'cost' : '',
   ].filter(Boolean).length;
 
   const handleClearAll = () => {
-    filtersForm.reset(defaultValues);
+    // Explicitly reset all fields to their default values, including calories
+    filtersForm.reset({
+      ...defaultValues,
+      calories: [0, 2000],
+      cookTime: [0, 240],
+      estimatedCost: [0, 30],
+      diets: [],
+      techniques: [],
+      specialAttributes: [],
+      mealType: '',
+      difficulty: '',
+      country: '',
+    });
     onReset();
   };
 
   return (
     <>
-      <Tabs defaultValue="search" className="w-full">
+      <Tabs
+        value={activeTab}
+        onValueChange={setActiveTab}
+        defaultValue={hasActiveFilters ? 'filters' : 'search'}
+        className="w-full"
+      >
         <TabsList className="mb-4">
           <TabsTrigger
             value="search"
@@ -181,6 +367,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
               filtersForm.reset({ ...defaultValues, search: '' });
               filtersForm.handleSubmit(onSearchSubmit)();
             }}
+            className="cursor-pointer"
           >
             Search
           </TabsTrigger>
@@ -190,6 +377,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
               searchForm.reset({ search: '' });
               searchForm.handleSubmit(onSearchSubmit)();
             }}
+            className="cursor-pointer"
           >
             Filters
             {activeCount > 0 && (
@@ -308,6 +496,8 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                 }))}
                                 value={field.value}
                                 onChange={field.onChange}
+                                selectPlaceholder="Cuisine"
+                                triggerClassName="w-full md:w-40 bg-background border border-input rounded-md focus:ring-2 focus:ring-primary/30 focus:border-primary/30 shadow-sm transition-colors hover:bg-background hover:border-input focus:bg-background focus:border-primary/30"
                               />
                             </FormControl>
                             <FormMessage />
@@ -319,7 +509,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                   {/* Advanced Filters Toggle */}
                   <button
                     type="button"
-                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition w-fit mt-2 mb-1"
+                    className="flex items-center gap-1 text-xs text-muted-foreground hover:text-primary transition w-fit mt-2 mb-1 cursor-pointer"
                     onClick={() => setShowAdvanced((v) => !v)}
                     aria-expanded={showAdvanced}
                   >
@@ -337,7 +527,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                     } animate-fade-in`}
                   >
                     <div className="flex flex-col md:flex-row gap-4 w-full">
-                      <div className="flex flex-col w-full md:w-1/2 md:flex-1">
+                      <div className="flex flex-col w-full md:w-1/3 md:flex-1">
                         <FormField
                           name="diets"
                           control={filtersForm.control}
@@ -346,14 +536,12 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                               <FormLabel>Diets</FormLabel>
                               <FormControl>
                                 <MultiSelect
-                                  options={dietLabels.map((d) => ({
-                                    value: d,
-                                    label: d,
-                                  }))}
+                                  options={dietLabels}
                                   value={field.value || []}
                                   onValueChange={field.onChange}
                                   placeholder="Diets"
                                   className="w-full"
+                                  maxCount={1}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -361,7 +549,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                           )}
                         />
                       </div>
-                      <div className="flex flex-col w-full md:w-1/2 md:flex-1">
+                      <div className="flex flex-col w-full md:w-1/3 md:flex-1">
                         <FormField
                           name="techniques"
                           control={filtersForm.control}
@@ -370,14 +558,34 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                               <FormLabel>Techniques</FormLabel>
                               <FormControl>
                                 <MultiSelect
-                                  options={techniques.map((t) => ({
-                                    value: t,
-                                    label: t,
-                                  }))}
+                                  options={techniquesOptions}
                                   value={field.value || []}
                                   onValueChange={field.onChange}
                                   placeholder="Techniques"
                                   className="w-full"
+                                  maxCount={1}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="flex flex-col w-full md:w-1/3 md:flex-1">
+                        <FormField
+                          name="specialAttributes"
+                          control={filtersForm.control}
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Special Attributes</FormLabel>
+                              <FormControl>
+                                <MultiSelect
+                                  options={specialAttributes}
+                                  value={field.value || []}
+                                  onValueChange={field.onChange}
+                                  placeholder="Special Attributes"
+                                  className="w-full"
+                                  maxCount={1}
                                 />
                               </FormControl>
                               <FormMessage />
@@ -388,13 +596,13 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                     </div>
                     <div className="flex flex-col gap-4 mt-4 md:pt-2">
                       <div className="flex flex-col md:flex-row gap-4">
-                        <div className="flex flex-col w-full md:w-1/2 gap-2">
+                        <div className="flex flex-col w-full md:w-1/3 gap-2">
                           <FormField
                             name="calories"
                             control={filtersForm.control}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Calories</FormLabel>
+                                <FormLabel>Calories (kcal)</FormLabel>
                                 <FormControl>
                                   <Slider
                                     min={0}
@@ -415,7 +623,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                             )}
                           />
                         </div>
-                        <div className="flex flex-col w-full md:w-1/2 gap-2">
+                        <div className="flex flex-col w-full md:w-1/3 gap-2">
                           <FormField
                             name="cookTime"
                             control={filtersForm.control}
@@ -442,6 +650,37 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                             )}
                           />
                         </div>
+                        <div className="flex flex-col w-full md:w-1/3 gap-2">
+                          <FormField
+                            name="estimatedCost"
+                            control={filtersForm.control}
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Estimated Cost (€)</FormLabel>
+                                <FormControl>
+                                  <Slider
+                                    min={0}
+                                    max={30}
+                                    step={1}
+                                    value={field.value || [0, 30]}
+                                    onValueChange={field.onChange}
+                                    defaultValue={[0, 30]}
+                                  />
+                                </FormControl>
+                                <div className="text-xs text-muted-foreground">
+                                  {isEstimatedCostDefault
+                                    ? 'Any'
+                                    : `€${
+                                        filterValues.estimatedCost?.[0] ?? 0
+                                      }–€${
+                                        filterValues.estimatedCost?.[1] ?? 30
+                                      }`}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
@@ -455,13 +694,16 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                 </div>
                 {/* Action button area */}
                 <div className="flex flex-row md:flex-col items-end md:items-center gap-2 md:gap-2 md:w-auto md:self-start">
-                  <Button type="submit" className="w-full md:w-28">
+                  <Button
+                    type="submit"
+                    className="w-full md:w-28 cursor-pointer"
+                  >
                     Apply
                   </Button>
                   <Button
                     type="button"
                     variant="ghost"
-                    className="w-full md:w-28"
+                    className="w-full md:w-28 cursor-pointer"
                     onClick={handleClearAll}
                   >
                     Clear All

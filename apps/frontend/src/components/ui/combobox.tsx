@@ -26,6 +26,7 @@ interface ComboboxProps {
   options: { label: string; value: string }[];
   value?: string;
   onChange: (value: string) => void;
+  triggerClassName?: string; // Optional custom class for trigger button
 }
 export const Combobox: FC<ComboboxProps> = ({
   searchPlaceholder,
@@ -34,6 +35,7 @@ export const Combobox: FC<ComboboxProps> = ({
   options,
   value,
   onChange,
+  triggerClassName,
 }) => {
   return (
     <Popover>
@@ -41,15 +43,16 @@ export const Combobox: FC<ComboboxProps> = ({
         <Button
           variant="outline"
           role="combobox"
-          className={cn(
-            'w-[200px] justify-between',
-            !value && 'text-muted-foreground'
-          )}
+          className={cn('w-[200px] justify-between', triggerClassName)}
         >
-          {value
-            ? options.find((option) => option.value === value)?.label
-            : selectPlaceholder}
-          <ChevronsUpDown className="opacity-50" />
+          {value ? (
+            <span className="text-foreground">
+              {options.find((option) => option.value === value)?.label}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">{selectPlaceholder}</span>
+          )}
+          <ChevronsUpDown className="ml-2 text-foreground opacity-50" />
         </Button>
       </PopoverTrigger>
       <PopoverContent className="w-[200px] p-0">

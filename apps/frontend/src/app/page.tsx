@@ -9,6 +9,8 @@ import { Spinner } from '@/components/ui/spinner';
 import { RecipeCard } from '@/components/recipe/RecipeCard';
 import { useForm } from 'react-hook-form';
 import { useRouter } from 'next/navigation';
+import Banner from '@/components/banner';
+import Link from 'next/link';
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<any[]>([]); // TODO: Replace any with Recipe type
@@ -84,16 +86,31 @@ export default function HomePage() {
         </form>
 
         {/* Popular tags */}
-        <div className="flex flex-wrap gap-2 mt-6">
-          {['30 Min Meals', 'Vegan', 'Budget-Friendly', 'One-Pot'].map(
-            (tag) => (
-              <Badge key={tag} variant="outline">
-                {tag}
-              </Badge>
-            )
-          )}
+        <div className="flex flex-wrap gap-1 mt-2">
+          {/* Example clickable badges for homepage popular tags */}
+          <Link href="/discover?cookTimeMax=30">
+            <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+              30 Min Meals
+            </Badge>
+          </Link>
+          <Link href="/discover?diets=vegan">
+            <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+              Vegan
+            </Badge>
+          </Link>
+          <Link href="/discover?estimatedCostMax=1.5">
+            <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+              Budget-Friendly
+            </Badge>
+          </Link>
+          <Link href="/discover?specialAttributes=one-pot">
+            <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+              One-Pot
+            </Badge>
+          </Link>
         </div>
       </section>
+      <Banner />
     </div>
   );
 }
