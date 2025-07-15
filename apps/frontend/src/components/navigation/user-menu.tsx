@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { useAuthStore, User } from '@/app/auth/authStore';
-import { BookIcon, LogInIcon, SettingsIcon } from 'lucide-react';
+import { BookIcon, HeartIcon, LogInIcon, SettingsIcon } from 'lucide-react';
 import { FC } from 'react';
 
 interface UserProps {
@@ -82,6 +82,12 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
               )}
             </div>
             <DropdownMenuSeparator />
+            <Link href="/favorites">
+              <DropdownMenuItem className="cursor-pointer">
+                <HeartIcon className="size-4" />
+                {t('Favorites')}
+              </DropdownMenuItem>
+            </Link>
             <Link href="/settings">
               <DropdownMenuItem className="cursor-pointer">
                 <SettingsIcon className="size-4" />

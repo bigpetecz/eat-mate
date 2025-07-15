@@ -112,6 +112,16 @@ class AIInfo {
 
 const AIInfoSchema = SchemaFactory.createForClass(AIInfo);
 
+class Rating {
+  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
+  user: User;
+
+  @Prop({ type: Number, min: 1, max: 5, required: true })
+  value: number;
+}
+
+const RatingSchema = SchemaFactory.createForClass(Rating);
+
 @Schema({ timestamps: true })
 export class Recipe extends mongoose.Document {
   // === USER-ENTERED ===
@@ -157,6 +167,16 @@ export class Recipe extends mongoose.Document {
   // === AI-ENRICHED ===
   @Prop({ type: AIInfoSchema, default: {} })
   ai: AIInfo;
+
+  // === RATINGS ===
+  @Prop({ type: [RatingSchema], default: [] })
+  ratings: Rating[];
+
+  @Prop({ type: Number, default: 0 })
+  averageRating: number;
+
+  @Prop({ type: Number, default: 0 })
+  ratingCount: number;
 }
 
 export const RecipeSchema = SchemaFactory.createForClass(Recipe);

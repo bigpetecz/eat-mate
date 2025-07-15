@@ -20,6 +20,7 @@ export interface Recipe {
     difficulty?: string;
     techniques?: string[];
     dietLabels?: string[];
-    estimatedCost?: number; // Add estimatedCost here
+    specialAttributes?: string[];
+    estimatedCost?: number;
   };
 }

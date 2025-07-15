@@ -18,7 +18,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, isValidObjectId } from 'mongoose';
+import { Model, isValidObjectId, Types } from 'mongoose';
 import { Recipe } from './recipe.schema';
 import { CreateRecipeDto, UpdateRecipeDto } from './recipe.dto';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -27,6 +27,7 @@ import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { FilesInterceptor } from '@nestjs/platform-express';
 import type { JwtUser } from './types';
 import type { File as MulterFile } from 'multer';
+import { RateRecipeDto } from './rate-recipe.dto';
 
 @Controller('recipes')
 @UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
@@ -275,5 +276,75 @@ export class RecipesController {
     );
     await recipe.save();
     return { images: recipe.images };
+  }
+
+  // Rate a recipe (add or update rating)
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/rate')
+  async rateRecipe(
+    @Param('id') id: string,
+    @UserDecorator() user: JwtUser,
+    @Body() rateDto: RateRecipeDto
+  ): Promise<{ averageRating: number; ratingCount: number }> {
+    if (!isValidObjectId(id))
+      throw new BadRequestException('Invalid recipe ID');
+    const recipe = await this.recipeModel.findById(id).exec();
+    if (!recipe) throw new NotFoundException('Recipe not found');
+    if (recipe.author.toString() === user.userId)
+      throw new BadRequestException('You cannot rate your own recipe.');
+    // Check for duplicate rating
+    const alreadyRated = recipe.ratings.some(
+      (r) => r.user.toString() === user.userId
+    );
+    if (alreadyRated) {
+      throw new BadRequestException('You have already rated this recipe.');
+    }
+    // Add new rating
+    recipe.ratings.push({
+      user: new Types.ObjectId(user.userId),
+      value: rateDto.value,
+    });
+    // Update averageRating and ratingCount
+    recipe.ratingCount = recipe.ratings.length;
+    recipe.averageRating =
+      recipe.ratingCount > 0
+        ? recipe.ratings.reduce((sum, r) => sum + r.value, 0) /
+          recipe.ratingCount
+        : 0;
+    await recipe.save();
+    return {
+      averageRating: recipe.averageRating,
+      ratingCount: recipe.ratingCount,
+    };
+  }
+
+  // Get all ratings for a recipe
+  @Get(':id/ratings')
+  async getRatings(
+    @Param('id') id: string
+  ): Promise<{ user: string; value: number }[]> {
+    if (!isValidObjectId(id))
+      throw new BadRequestException('Invalid recipe ID');
+    const recipe = await this.recipeModel.findById(id).lean().exec();
+    if (!recipe) throw new NotFoundException('Recipe not found');
+    return recipe.ratings.map((r) => ({
+      user: r.user.toString(),
+      value: r.value,
+    }));
+  }
+
+  // Get average rating and count for a recipe
+  @Get(':id/rating')
+  async getAverageRating(
+    @Param('id') id: string
+  ): Promise<{ averageRating: number; ratingCount: number }> {
+    if (!isValidObjectId(id))
+      throw new BadRequestException('Invalid recipe ID');
+    const recipe = await this.recipeModel.findById(id).lean().exec();
+    if (!recipe) throw new NotFoundException('Recipe not found');
+    return {
+      averageRating: recipe.averageRating,
+      ratingCount: recipe.ratingCount,
+    };
   }
 }

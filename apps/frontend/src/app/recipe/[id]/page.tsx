@@ -5,6 +5,13 @@ import { RecipeActions } from './RecipeActions';
 import apiClient from '../../apiClient';
 import { Card } from '@/components/ui/card';
 import ServingsIngredients from './ServingsIngredients';
+import { RecipeRating } from './RecipeRating';
+import {
+  dietLabels,
+  techniquesOptions,
+  specialAttributes,
+} from '@/lib/recipe-labels';
+import { Badge } from '@/components/ui/badge';
 
 interface Recipe {
   _id: string;
@@ -19,6 +26,8 @@ interface Recipe {
   ingredients: { name: string; quantity: string }[];
   instructions?: string[];
   author: string;
+  averageRating: number;
+  ratingCount: number;
   ai?: {
     nutrition?: {
       calories?: number;
@@ -51,7 +60,6 @@ export default async function RecipePage({ params }: RecipePageProps) {
   let recipe: Recipe | null = null;
   try {
     const res = await apiClient.get(`/recipes/${(await params).id}`);
-
     recipe = res.data;
   } catch (error) {
     console.error('Failed to fetch recipe:', error);
@@ -132,6 +140,13 @@ export default async function RecipePage({ params }: RecipePageProps) {
                 Cook: {recipe.cookTime ?? '-'} min
               </span>
             </div>
+            {/* Rating section */}
+            <RecipeRating
+              recipeId={recipe._id}
+              authorId={recipe.author}
+              averageRating={recipe.averageRating}
+              ratingCount={recipe.ratingCount}
+            />
           </div>
         </div>
         {/* AI-enriched info section */}
@@ -143,7 +158,9 @@ export default async function RecipePage({ params }: RecipePageProps) {
             <div className="flex flex-row flex-wrap md:flex-nowrap gap-6">
               <div className="w-full md:w-1/2 flex-shrink-0 flex-grow-0 gap-6">
                 <div>
-                  <h3 className="font-medium mb-2">Difficulty & Cost</h3>
+                  <h3 className="font-medium mb-2">
+                    Difficulty, Cost & Wine Pairing
+                  </h3>
                   <p>
                     Difficulty: <b>{recipe.ai?.difficulty ?? '-'}</b>
                   </p>
@@ -164,14 +181,15 @@ export default async function RecipePage({ params }: RecipePageProps) {
                   <h3 className="font-medium mb-2">Diet Labels</h3>
                   <div className="flex flex-wrap gap-2">
                     {recipe.ai?.dietLabels?.length
-                      ? recipe.ai.dietLabels.map((d) => (
-                          <span
-                            key={d}
-                            className="px-2 py-1 bg-muted rounded text-xs"
-                          >
-                            {d}
-                          </span>
-                        ))
+                      ? recipe.ai.dietLabels.map((d) => {
+                          const label =
+                            dietLabels.find((l) => l.value === d)?.label || d;
+                          return (
+                            <Badge key={d} variant="secondary">
+                              {label}
+                            </Badge>
+                          );
+                        })
                       : '-'}
                   </div>
                 </div>
@@ -179,14 +197,16 @@ export default async function RecipePage({ params }: RecipePageProps) {
                   <h3 className="font-medium mb-2">Techniques</h3>
                   <div className="flex flex-wrap gap-2">
                     {recipe.ai?.techniques?.length
-                      ? recipe.ai.techniques.map((t) => (
-                          <span
-                            key={t}
-                            className="px-2 py-1 bg-muted rounded text-xs"
-                          >
-                            {t}
-                          </span>
-                        ))
+                      ? recipe.ai.techniques.map((t) => {
+                          const label =
+                            techniquesOptions.find((l) => l.value === t)
+                              ?.label || t;
+                          return (
+                            <Badge key={t} variant="outline">
+                              {label}
+                            </Badge>
+                          );
+                        })
                       : '-'}
                   </div>
                 </div>
@@ -243,14 +263,16 @@ export default async function RecipePage({ params }: RecipePageProps) {
                   <h3 className="font-medium mb-2">Special Attributes</h3>
                   <div className="flex flex-wrap gap-2">
                     {recipe.ai?.specialAttributes?.length
-                      ? recipe.ai.specialAttributes.map((s) => (
-                          <span
-                            key={s}
-                            className="px-2 py-1 bg-muted rounded text-xs"
-                          >
-                            {s}
-                          </span>
-                        ))
+                      ? recipe.ai.specialAttributes.map((s) => {
+                          const label =
+                            specialAttributes.find((l) => l.value === s)
+                              ?.label || s;
+                          return (
+                            <Badge key={s} variant="outline">
+                              {label}
+                            </Badge>
+                          );
+                        })
                       : '-'}
                   </div>
                 </div>

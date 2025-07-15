@@ -4,6 +4,11 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Clock, Flame } from 'lucide-react';
 import { Recipe } from '@/types/recipe';
+import {
+  dietLabels,
+  techniquesOptions,
+  specialAttributes,
+} from '@/lib/recipe-labels';
 
 export interface RecipeCardProps {
   recipe: Recipe;
@@ -64,16 +69,32 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
               {recipe.country && (
                 <Badge variant="outline">{recipe.country}</Badge>
               )}
-              {recipe.ai.dietLabels?.map((d) => (
-                <Badge key={d} variant="secondary">
-                  {d}
-                </Badge>
-              ))}
-              {recipe.ai.techniques?.map((t) => (
-                <Badge key={t} variant="outline">
-                  {t}
-                </Badge>
-              ))}
+              {recipe.ai.dietLabels?.map((d) => {
+                const label = dietLabels.find((l) => l.value === d)?.label || d;
+                return (
+                  <Badge key={d} variant="secondary">
+                    {label}
+                  </Badge>
+                );
+              })}
+              {recipe.ai.techniques?.map((t) => {
+                const label =
+                  techniquesOptions.find((l) => l.value === t)?.label || t;
+                return (
+                  <Badge key={t} variant="outline">
+                    {label}
+                  </Badge>
+                );
+              })}
+              {recipe.ai.specialAttributes?.map((s) => {
+                const label =
+                  specialAttributes.find((l) => l.value === s)?.label || s;
+                return (
+                  <Badge key={s} variant="secondary">
+                    {label}
+                  </Badge>
+                );
+              })}
             </div>
             <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
               <span className="flex items-center gap-1">

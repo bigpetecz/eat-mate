@@ -22,6 +22,11 @@ import {
   FormControl,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  dietLabels,
+  techniquesOptions,
+  specialAttributes,
+} from '@/lib/recipe-labels';
 
 interface RecipeFiltersProps {
   defaultValues: {
@@ -29,12 +34,12 @@ interface RecipeFiltersProps {
     mealType: string;
     diets: string[];
     techniques: string[];
-    specialAttributes: string[]; // <-- add
+    specialAttributes: string[];
     difficulty: string;
     country: string;
     cookTime: number[];
     calories: number[];
-    estimatedCost: number[]; // <-- add
+    estimatedCost: number[];
   };
   onReset: () => void;
   onSearchSubmit: (values: Record<string, unknown>) => void;
@@ -43,59 +48,6 @@ interface RecipeFiltersProps {
 
 const mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'];
 const difficulties = ['Easy', 'Medium', 'Hard'];
-
-const dietLabels = [
-  { value: 'vegetarian', label: 'Vegetarian' },
-  { value: 'vegan', label: 'Vegan' },
-  { value: 'pescatarian', label: 'Pescatarian' },
-  { value: 'gluten-free', label: 'Gluten Free' },
-  { value: 'dairy-free', label: 'Dairy Free' },
-  { value: 'nut-free', label: 'Nut Free' },
-  { value: 'soy-free', label: 'Soy Free' },
-  { value: 'low-carb', label: 'Low Carb' },
-  { value: 'low-fat', label: 'Low Fat' },
-  { value: 'paleo', label: 'Paleo' },
-  { value: 'keto', label: 'Keto' },
-  { value: 'whole30', label: 'Whole30' },
-  { value: 'halal', label: 'Halal' },
-  { value: 'kosher', label: 'Kosher' },
-];
-
-const techniquesOptions = [
-  { value: 'boiling', label: 'Boiling' },
-  { value: 'blanching', label: 'Blanching' },
-  { value: 'steaming', label: 'Steaming' },
-  { value: 'poaching', label: 'Poaching' },
-  { value: 'simmering', label: 'Simmering' },
-  { value: 'stewing', label: 'Stewing' },
-  { value: 'braising', label: 'Braising' },
-  { value: 'roasting', label: 'Roasting' },
-  { value: 'baking', label: 'Baking' },
-  { value: 'grilling', label: 'Grilling' },
-  { value: 'broiling', label: 'Broiling' },
-  { value: 'sauteing', label: 'Sautéing' },
-  { value: 'stir-frying', label: 'Stir-Frying' },
-  { value: 'deep-frying', label: 'Deep-Frying' },
-  { value: 'pan-frying', label: 'Pan-Frying' },
-  { value: 'smoking', label: 'Smoking' },
-  { value: 'pickling', label: 'Pickling' },
-  { value: 'fermenting', label: 'Fermenting' },
-  { value: 'sous-vide', label: 'Sous-vide' },
-  { value: 'raw', label: 'Raw' },
-];
-const specialAttributes = [
-  { value: 'one-pot', label: 'One Pot' },
-  { value: 'one-pan', label: 'One Pan' },
-  { value: 'slow-cooker', label: 'Slow Cooker' },
-  { value: 'instant-pot', label: 'Instant Pot' },
-  { value: 'air-fryer', label: 'Air Fryer' },
-  { value: 'no-cook', label: 'No Cook' },
-  { value: 'freezer-friendly', label: 'Freezer Friendly' },
-  { value: 'meal-prep', label: 'Meal Prep' },
-  { value: '30-minute', label: '30 Minute' },
-  { value: '5-ingredients', label: '5 Ingredients' },
-  { value: 'kid-friendly', label: 'Kid Friendly' },
-];
 
 // List of countries with their own cuisine, all European, major Latin American, Asian, and Arab countries, ordered alphabetically
 const countries = [
@@ -602,7 +554,9 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                             control={filtersForm.control}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Calories (kcal)</FormLabel>
+                                <FormLabel>
+                                  Calories (kcal) per serving
+                                </FormLabel>
                                 <FormControl>
                                   <Slider
                                     min={0}
@@ -656,7 +610,9 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                             control={filtersForm.control}
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Estimated Cost (€)</FormLabel>
+                                <FormLabel>
+                                  Estimated Cost (€) per serving
+                                </FormLabel>
                                 <FormControl>
                                   <Slider
                                     min={0}

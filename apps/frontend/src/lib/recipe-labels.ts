@@ -1,0 +1,55 @@
+// Shared recipe labels for use in filters, detail, and card components
+
+export const dietLabels = [
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'pescatarian', label: 'Pescatarian' },
+  { value: 'gluten-free', label: 'Gluten Free' },
+  { value: 'dairy-free', label: 'Dairy Free' },
+  { value: 'nut-free', label: 'Nut Free' },
+  { value: 'soy-free', label: 'Soy Free' },
+  { value: 'low-carb', label: 'Low Carb' },
+  { value: 'low-fat', label: 'Low Fat' },
+  { value: 'paleo', label: 'Paleo' },
+  { value: 'keto', label: 'Keto' },
+  { value: 'whole30', label: 'Whole30' },
+  { value: 'halal', label: 'Halal' },
+  { value: 'kosher', label: 'Kosher' },
+];
+
+export const techniquesOptions = [
+  { value: 'boiling', label: 'Boiling' },
+  { value: 'blanching', label: 'Blanching' },
+  { value: 'steaming', label: 'Steaming' },
+  { value: 'poaching', label: 'Poaching' },
+  { value: 'simmering', label: 'Simmering' },
+  { value: 'stewing', label: 'Stewing' },
+  { value: 'braising', label: 'Braising' },
+  { value: 'roasting', label: 'Roasting' },
+  { value: 'baking', label: 'Baking' },
+  { value: 'grilling', label: 'Grilling' },
+  { value: 'broiling', label: 'Broiling' },
+  { value: 'sauteing', label: 'Sautéing' },
+  { value: 'stir-frying', label: 'Stir-Frying' },
+  { value: 'deep-frying', label: 'Deep-Frying' },
+  { value: 'pan-frying', label: 'Pan-Frying' },
+  { value: 'smoking', label: 'Smoking' },
+  { value: 'pickling', label: 'Pickling' },
+  { value: 'fermenting', label: 'Fermenting' },
+  { value: 'sous-vide', label: 'Sous-vide' },
+  { value: 'raw', label: 'Raw' },
+];
+
+export const specialAttributes = [
+  { value: 'one-pot', label: 'One Pot' },
+  { value: 'one-pan', label: 'One Pan' },
+  { value: 'slow-cooker', label: 'Slow Cooker' },
+  { value: 'instant-pot', label: 'Instant Pot' },
+  { value: 'air-fryer', label: 'Air Fryer' },
+  { value: 'no-cook', label: 'No Cook' },
+  { value: 'freezer-friendly', label: 'Freezer Friendly' },
+  { value: 'meal-prep', label: 'Meal Prep' },
+  { value: '30-minute', label: '30 Minute' },
+  { value: '5-ingredients', label: '5 Ingredients' },
+  { value: 'kid-friendly', label: 'Kid Friendly' },
+];
