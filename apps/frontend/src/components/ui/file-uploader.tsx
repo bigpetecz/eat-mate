@@ -11,6 +11,7 @@ import {
   FileTextIcon,
   FileVideoIcon,
 } from 'lucide-react';
+import Image from 'next/image';
 import * as React from 'react';
 
 const ROOT_NAME = 'FileUpload';
@@ -1030,7 +1031,7 @@ const FileUploadItemPreview = React.forwardRef<
 
       if (isImage) {
         return (
-          <img
+          <Image
             src={URL.createObjectURL(file)}
             alt={file.name}
             className="size-full rounded object-cover"

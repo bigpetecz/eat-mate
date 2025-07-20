@@ -29,62 +29,76 @@ export default function Hero() {
   }, []);
 
   return (
-    <section className="relative flex h-[40vh] w-full items-center justify-center overflow-hidden bg-gradient-to-br from-orange-200 via-orange-300 to-yellow-100 text-center dark:bg-gradient-to-br dark:from-orange-900 dark:via-orange-950 dark:to-yellow-900">
-      <div className="max-w-[1024px] flex flex-col items-center px-4">
-        {/* Animated decorative cooking icons */}
+    <section className="relative w-full md:min-h-[40vh] flex flex-col md:justify-center items-center bg-gradient-to-bl from-yellow-50 via-orange-100 to-orange-200 dark:from-orange-950 dark:via-orange-900 dark:to-yellow-900 overflow-hidden">
+      {/* Animated icons for desktop with color */}
+      <div className="hidden md:block absolute left-8 top-8 z-10 opacity-80">
         <motion.div
-          className="absolute left-10 top-10 text-orange-500 dark:text-orange-300"
-          animate={{ y: [0, -10, 0], rotate: [0, 10, -10, 0] }}
+          initial={{ rotate: -10, y: 0 }}
+          animate={{ rotate: [0, 10, -10, 0], y: [0, 10, -10, 0] }}
           transition={{ repeat: Infinity, duration: 6 }}
         >
-          <ChefHat size={50} />
+          <ChefHat
+            size={60}
+            className="text-orange-400 dark:text-yellow-300 drop-shadow-lg"
+          />
         </motion.div>
-
+      </div>
+      <div className="hidden md:block absolute right-8 top-16 z-10 opacity-80">
         <motion.div
-          className="absolute right-10 top-20 text-orange-400 dark:text-orange-200"
-          animate={{ y: [0, 15, 0] }}
-          transition={{ repeat: Infinity, duration: 5 }}
-        >
-          <Utensils size={45} />
-        </motion.div>
-
-        <motion.div
-          className="absolute left-1/2 bottom-10 text-orange-300 dark:text-yellow-200"
-          animate={{ y: [0, -15, 0] }}
+          initial={{ rotate: 10, y: 0 }}
+          animate={{ rotate: [0, -10, 10, 0], y: [0, -10, 10, 0] }}
           transition={{ repeat: Infinity, duration: 7 }}
         >
-          <EggFried size={50} />
+          <Utensils
+            size={60}
+            className="text-orange-500 dark:text-yellow-200 drop-shadow-lg"
+          />
         </motion.div>
-
-        {/* Slogan text */}
-        <AnimatePresence mode="wait">
-          <motion.h1
-            key={`slogan-${index}`}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.8 }}
-            className="mb-2 text-4xl font-bold text-orange-900 md:text-6xl dark:text-yellow-100"
-          >
-            {slogans[index]}
-          </motion.h1>
-        </AnimatePresence>
-
-        {/* Description text */}
-        <AnimatePresence mode="wait">
-          <motion.p
-            key={`desc-${index}`}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.8 }}
-            className="mb-6 max-w-xl text-lg text-orange-800 md:text-xl dark:text-yellow-200"
-          >
-            {descriptions[index]}
-          </motion.p>
-        </AnimatePresence>
-
-        <div className="flex flex-col items-center gap-3 md:flex-row">
+      </div>
+      <div className="hidden md:block absolute left-1/2 bottom-8 -translate-x-1/2 z-10 opacity-80">
+        <motion.div
+          initial={{ rotate: 0, y: 0 }}
+          animate={{ rotate: [0, 10, -10, 0], y: [0, 10, -10, 0] }}
+          transition={{ repeat: Infinity, duration: 8 }}
+        >
+          <EggFried
+            size={50}
+            className="text-yellow-500 dark:text-orange-200 drop-shadow-lg"
+          />
+        </motion.div>
+      </div>
+      {/* Main content: slogans/descriptions and buttons */}
+      <div className="relative w-full max-w-3xl flex flex-1 flex-col justify-between items-center px-4 md:px-0 py-8 md:py-16 z-20 min-h-[60vh]">
+        <div className="flex-1 flex flex-col items-center justify-center pt-16 md:pt-0 w-full">
+          <AnimatePresence mode="wait">
+            <motion.h1
+              key={`slogan-${index}`}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.8 }}
+              className="mb-2 text-4xl font-bold text-orange-900 md:text-6xl dark:text-yellow-100 text-center w-full"
+              style={{ minHeight: 'clamp(2.5rem, 8vw, 4.5rem)' }}
+            >
+              {slogans[index]}
+            </motion.h1>
+          </AnimatePresence>
+          <AnimatePresence mode="wait">
+            <motion.p
+              key={`desc-${index}`}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.8 }}
+              className="mb-6 text-lg text-orange-800 md:text-xl dark:text-yellow-200 text-center w-full"
+              style={{ minHeight: 'clamp(1.5rem, 6vw, 3.5rem)' }}
+            >
+              {descriptions[index]}
+            </motion.p>
+          </AnimatePresence>
+        </div>
+        {/* Buttons: always at bottom on mobile, centered on desktop */}
+        <div className="w-full max-w-xl mx-auto flex flex-col md:flex-row gap-3 justify-center items-center mt-2 md:mt-0 pb-4">
           <Link href={'/sign-up'}>
             <Button
               size="lg"
@@ -104,6 +118,46 @@ export default function Hero() {
             </Button>
           </Link>
         </div>
+      </div>
+      {/* Animated icons for mobile (hidden on desktop): EggFried top center, ChefHat and Utensils bottom corners */}
+      {/* Top center EggFried */}
+      <div className="md:hidden absolute left-1/2 top-4 -translate-x-1/2 z-10 opacity-90 pointer-events-none">
+        <motion.div
+          initial={{ rotate: 0, y: 0 }}
+          animate={{ rotate: [0, 10, -10, 0], y: [0, 10, -10, 0] }}
+          transition={{ repeat: Infinity, duration: 8 }}
+        >
+          <EggFried
+            size={28}
+            className="text-yellow-500 dark:text-orange-200 drop-shadow-md"
+          />
+        </motion.div>
+      </div>
+      {/* Bottom left ChefHat */}
+      <div className="md:hidden absolute left-4 bottom-4 z-10 opacity-90 pointer-events-none">
+        <motion.div
+          initial={{ rotate: -10, y: 0 }}
+          animate={{ rotate: [0, 10, -10, 0], y: [0, 10, -10, 0] }}
+          transition={{ repeat: Infinity, duration: 6 }}
+        >
+          <ChefHat
+            size={32}
+            className="text-orange-400 dark:text-yellow-300 drop-shadow-md"
+          />
+        </motion.div>
+      </div>
+      {/* Bottom right Utensils */}
+      <div className="md:hidden absolute right-4 bottom-4 z-10 opacity-90 pointer-events-none">
+        <motion.div
+          initial={{ rotate: 10, y: 0 }}
+          animate={{ rotate: [0, -10, 10, 0], y: [0, -10, 10, 0] }}
+          transition={{ repeat: Infinity, duration: 7 }}
+        >
+          <Utensils
+            size={32}
+            className="text-orange-500 dark:text-yellow-200 drop-shadow-md"
+          />
+        </motion.div>
       </div>
     </section>
   );

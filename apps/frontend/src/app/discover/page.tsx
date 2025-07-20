@@ -1,4 +1,5 @@
 'use client';
+import { Suspense } from 'react';
 import { Card } from '@/components/ui/card';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { RecipeFilters } from './RecipeFilters';
@@ -7,10 +8,9 @@ import { RecipeCard } from '@/components/recipe/RecipeCard';
 import { useSearchParams } from 'next/navigation';
 import type { Recipe } from '@/types/recipe';
 
-const DiscoverPage = () => {
+function DiscoverInner() {
   const searchParams = useSearchParams();
 
-  // Parse all filters from query params
   const getDefaultValuesFromParams = () => {
     const getArray = (key: string) => {
       const val = searchParams.get(key);
@@ -197,6 +197,12 @@ const DiscoverPage = () => {
       </div>
     </div>
   );
-};
+}
 
-export default DiscoverPage;
+export default function DiscoverPage() {
+  return (
+    <Suspense>
+      <DiscoverInner />
+    </Suspense>
+  );
+}

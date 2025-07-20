@@ -649,7 +649,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                   />
                 </div>
                 {/* Action button area */}
-                <div className="flex flex-row md:flex-col items-end md:items-center gap-2 md:gap-2 md:w-auto md:self-start">
+                <div className="flex flex-col items-end md:items-center gap-2 md:gap-2 md:w-auto">
                   <Button
                     type="submit"
                     className="w-full md:w-28 cursor-pointer"

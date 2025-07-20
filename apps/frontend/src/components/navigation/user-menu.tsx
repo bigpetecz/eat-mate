@@ -11,7 +11,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { useAuthStore, User } from '@/app/auth/authStore';
+import { User } from '@/app/auth/authStore';
 import { BookIcon, HeartIcon, LogInIcon, SettingsIcon } from 'lucide-react';
 import { FC } from 'react';
 
@@ -21,20 +21,6 @@ interface UserProps {
 
 export const UserMenu: FC<UserProps> = ({ user }) => {
   const { t } = useTranslation();
-  const logout = useAuthStore((s) => s.logout);
-  const handleLogout = async () => {
-    try {
-      await fetch('api/auth/logout', {
-        method: 'POST',
-        cache: 'no-store',
-        credentials: 'include',
-      });
-      logout();
-      window.location.replace('/'); // Forces a full reload and user re-fetch
-    } catch (e) {
-      console.error('Logout failed:', e);
-    }
-  };
 
   const initials = user?.displayName
     ? user.displayName
@@ -95,10 +81,12 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer">
-              <LogInIcon className="size-4" />
-              {t('Logout')}
-            </DropdownMenuItem>
+            <Link href="/logout">
+              <DropdownMenuItem className="cursor-pointer">
+                <LogInIcon className="size-4" />
+                {t('Logout')}
+              </DropdownMenuItem>
+            </Link>
           </>
         ) : (
           <>

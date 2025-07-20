@@ -36,36 +36,37 @@ export default function HomePage() {
   }, []);
 
   return (
-    <div className="flex flex-col">
-      {/* HERO */}
-      <section className="relative flex flex-col items-center justify-center text-center py-16 bg-muted">
-        <h1 className="text-4xl md:text-6xl font-bold mb-4">
-          Discover Your Next Favorite Recipe
-        </h1>
-        <p className="text-lg mb-8">
-          Cook smarter, discover better, enjoy more.
-        </p>
+    <div className="flex flex-col bg-muted">
+      <div className="px-2 sm:px-4 md:px-0">
+        {/* HERO */}
+        <section className="relative flex flex-col items-center justify-center text-center py-16 bg-muted">
+          <h1 className="text-4xl md:text-6xl font-bold mb-4">
+            Discover Your Next Favorite Recipe
+          </h1>
+          <p className="text-lg mb-8">
+            Cook smarter, discover better, enjoy more.
+          </p>
 
-        {/* Carousel */}
-        <div className="w-full max-w-5xl overflow-hidden">
-          {loading ? (
-            <div className="flex items-center justify-center min-h-[20rem]">
-              <Spinner />
-            </div>
-          ) : error ? (
-            <div className="text-destructive py-12">{error}</div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {recipes.slice(0, 3).map((recipe) => (
-                <RecipeCard key={recipe._id} recipe={recipe} />
-              ))}
-            </div>
-          )}
-        </div>
-      </section>
-
+          {/* Carousel */}
+          <div className="w-full max-w-5xl overflow-hidden">
+            {loading ? (
+              <div className="flex items-center justify-center min-h-[20rem]">
+                <Spinner />
+              </div>
+            ) : error ? (
+              <div className="text-destructive py-12">{error}</div>
+            ) : (
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {recipes.slice(0, 3).map((recipe) => (
+                  <RecipeCard key={recipe._id} recipe={recipe} />
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
       {/* SEARCH */}
-      <section className="flex flex-col items-center justify-center py-16">
+      <section className="bg-background flex flex-col items-center justify-center py-16 px-2 sm:px-4 md:px-0">
         <form
           onSubmit={handleSubmit(onSubmit)}
           className="flex w-full max-w-xl gap-2"
