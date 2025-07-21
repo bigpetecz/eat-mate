@@ -1,81 +1,87 @@
-# Org
+# EatMate Web App
 
-<a alt="Nx logo" href="https://nx.dev" target="_blank" rel="noreferrer"><img src="https://raw.githubusercontent.com/nrwl/nx/master/images/nx-logo.png" width="45"></a>
+## Overview
 
-✨ Your new, shiny [Nx workspace](https://nx.dev) is almost ready ✨.
+EatMate is a modern web application for discovering, creating, and sharing recipes. It features a mobile-first, responsive design, robust authentication, AI-powered username generation, and a rich set of tools for food enthusiasts. The platform leverages Next.js, NestJS, MongoDB, and OpenAI for a seamless and intelligent user experience.
 
-[Learn more about this workspace setup and its capabilities](https://nx.dev/nx-api/next?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or run `npx nx graph` to visually explore what was created. Now, let's get you up to speed!
+## Features
 
-## Finish your CI setup
+- **Recipe Discovery:** Filter, search, and explore a wide variety of recipes with advanced filters.
+- **Recipe Creation:** Authenticated users can create, edit, and manage their own recipes.
+- **Favorites & Personal Recipes:** Save favorite recipes and view all recipes you have authored.
+- **User Profiles:** Unique display names, theme preferences (auto/dark/light), and profile management.
+- **Authentication:** Secure login, registration, and Google OAuth integration.
+- **AI Username Generation:** Generate unique, fun usernames using OpenAI.
+- **Internationalization:** Multi-language support with i18next.
+- **Modern UI:** Built with shadcn/ui, Tailwind CSS, and Radix UI for a clean, accessible interface.
+- **Mobile-First:** Fully responsive design for all devices.
 
-[Click here to finish setting up your workspace!](https://cloud.nx.app/connect/MAwa2VcbNL)
+## Architecture
 
-## Run tasks
+### 1. Frontend (Next.js)
 
-To run the dev server for your app, use:
+- **App Directory:** Uses Next.js App Router for modern routing and layouts.
+- **UI Components:** Built with shadcn/ui, Radix UI, and custom components (e.g., RecipeCard, Header, MobileMenu).
+- **State Management:** React hooks, react-hook-form, and zod for validation.
+- **Theme Management:** next-themes for light/dark/auto theme switching.
+- **API Client:** Axios-based client for communication with the backend.
 
-```sh
-npx nx dev frontend
-```
+### 2. Backend (NestJS)
 
-To create a production bundle:
+- **REST API:** Built with NestJS, providing endpoints for recipes, users, authentication, and AI services.
+- **Database:** MongoDB with Mongoose schemas for users and recipes.
+- **Authentication:** JWT-based authentication and Google OAuth.
+- **OpenAI Integration:** For AI-powered username generation and future enhancements.
 
-```sh
-npx nx build frontend
-```
+### 3. Shared Libraries
 
-To see all available targets to run for a project, run:
+- **Data Access:** Shared TypeScript libraries for diets, cooking techniques, and more.
 
-```sh
-npx nx show project frontend
-```
+## Getting Started
 
-These targets are either [inferred automatically](https://nx.dev/concepts/inferred-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) or defined in the `project.json` or `package.json` files.
+1. **Clone the repository:**
 
-[More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+   ```sh
+   git clone https://github.com/bigpetecz/eat-mate.git
+   cd eat-mate
+   ```
 
-## Add new projects
+2. **Install dependencies:**
 
-While you could add new projects to your workspace manually, you might want to leverage [Nx plugins](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) and their [code generation](https://nx.dev/features/generate-code?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) feature.
+   ```sh
+   npm install
+   ```
 
-Use the plugin's generator to create new projects.
+3. **Set up environment variables:**
 
-To generate a new application, use:
+   - Copy `.env.example` to `.env` in both `apps/api` and `apps/frontend`.
+   - Add your MongoDB URI, OpenAI API key, and other secrets.
 
-```sh
-npx nx g @nx/next:app demo
-```
+4. **Run the development servers:**
 
-To generate a new library, use:
+   - **API:**
+     ```sh
+     cd apps/api
+     npm run start:dev
+     ```
+   - **Frontend:**
+     ```sh
+     cd apps/frontend
+     npm run dev
+     ```
 
-```sh
-npx nx g @nx/react:lib mylib
-```
+5. **Access the app:**  
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-You can use `npx nx list` to get a list of installed plugins. Then, run `npx nx list <plugin-name>` to learn about more specific capabilities of a particular plugin. Alternatively, [install Nx Console](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) to browse plugins and generators in your IDE.
+## Security
 
-[Learn more about Nx plugins &raquo;](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects) | [Browse the plugin registry &raquo;](https://nx.dev/plugin-registry?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+- **API Keys & Secrets:** All sensitive keys are excluded from version control via `.gitignore`.
+- **Authentication:** JWT and OAuth for secure user sessions.
 
-[Learn more about Nx on CI](https://nx.dev/ci/intro/ci-with-nx#ready-get-started-with-your-provider?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+## Contributing
 
-## Install Nx Console
+Pull requests are welcome! For major changes, please open an issue first to discuss your ideas.
 
-Nx Console is an editor extension that enriches your developer experience. It lets you run tasks, generate code, and improves code autocompletion in your IDE. It is available for VSCode and IntelliJ.
+## License
 
-[Install Nx Console &raquo;](https://nx.dev/getting-started/editor-setup?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-## Useful links
-
-Learn more:
-
-- [Learn more about this workspace setup](https://nx.dev/nx-api/next?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Learn about Nx on CI](https://nx.dev/ci/intro/ci-with-nx?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [Releasing Packages with Nx release](https://nx.dev/features/manage-releases?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-- [What are Nx plugins?](https://nx.dev/concepts/nx-plugins?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
-
-And join the Nx community:
-
-- [Discord](https://go.nx.dev/community)
-- [Follow us on X](https://twitter.com/nxdevtools) or [LinkedIn](https://www.linkedin.com/company/nrwl)
-- [Our Youtube channel](https://www.youtube.com/@nxdevtools)
-- [Our blog](https://nx.dev/blog?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
+This project is licensed under the MIT License.
