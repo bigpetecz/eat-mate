@@ -164,10 +164,7 @@ function DiscoverInner() {
 
       {/* Headline between filters and recipes */}
       <div className="max-w-5xl mx-auto px-2 md:px-0">
-        <h2 className="text-2xl md:text-3xl font-bold text-center text-primary py-4 mb-2">
-          Discover Recipes Tailored to Your Taste
-        </h2>
-        <p className="text-center text-muted-foreground mb-6">
+        <p className="text-center text-muted-foreground">
           Browse delicious ideas below, or adjust filters to find your perfect
           meal.
         </p>

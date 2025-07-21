@@ -8,7 +8,7 @@ const EditRecipePage = async () => {
 
   return (
     <PrivatePage user={user}>
-      <div className="bg-muted min-h-[calc(100vh-8rem)] py-8">
+      <div className="bg-muted min-h-[calc(100vh-8rem)] px-1 py-8">
         <Card className="bg-background max-w-2xl mx-auto p-8">
           <h1 className="text-2xl font-bold text-center">Edit Recipe</h1>
           <p className="text-muted-foreground text-center">

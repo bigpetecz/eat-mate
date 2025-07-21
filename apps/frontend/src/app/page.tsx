@@ -72,7 +72,7 @@ export default function HomePage() {
           className="flex w-full max-w-xl gap-2"
         >
           <Input
-            placeholder="What do you want to cook today?"
+            placeholder="What do you want to cook?"
             className="flex-1 h-14 text-lg px-6"
             {...register('search')}
           />

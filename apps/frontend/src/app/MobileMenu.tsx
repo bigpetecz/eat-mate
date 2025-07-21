@@ -1,35 +1,37 @@
 'use client';
-import {
-  Dialog,
-  DialogTrigger,
-  DialogContent,
-  DialogTitle,
-} from '@/components/ui/dialog';
+
+import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { useSwipeable } from 'react-swipeable';
 import { FC, useState } from 'react';
 import Link from 'next/link';
-import { LogOut, Heart, Settings, Plus, LogInIcon, Book } from 'lucide-react';
+import {
+  LogOut,
+  Heart,
+  Settings,
+  Plus,
+  LogInIcon,
+  Book,
+  Menu as MenuIcon,
+  PencilIcon,
+} from 'lucide-react';
 import { User } from './auth/authStore';
+import { DialogTitle } from '@/components/ui/dialog';
 
 interface MobileMenuProps {
   user: User;
 }
+
 export const MobileMenu: FC<MobileMenuProps> = ({ user }) => {
   const [open, setOpen] = useState(false);
 
-  const swipeHandlers = useSwipeable({
-    onSwipedLeft: () => setOpen(false),
-    trackTouch: true,
-  });
-
   const mainItems = [
-    { title: 'Add recipe', icon: Plus, url: '/recipe/create' },
-    { title: 'Discover recipes', url: '/discover' },
+    { title: 'Add Recipe', icon: Plus, url: '/recipe/create' },
+    { title: 'Discover Recipes', url: '/discover' },
   ];
 
   const userItems = [
-    { title: 'Favorites', icon: Heart, url: '/favorites' },
+    { title: 'My Recipes', icon: PencilIcon, url: '/my-recipes' },
+    { title: 'Favorite recipes', icon: Heart, url: '/favorites' },
     { title: 'Settings', icon: Settings, url: '/settings' },
     { title: 'Logout', icon: LogOut, url: '/logout' },
   ];
@@ -39,70 +41,57 @@ export const MobileMenu: FC<MobileMenuProps> = ({ user }) => {
     { title: 'Sign Up', icon: Book, url: '/sign-up' },
   ];
 
+  const handleClose = () => setOpen(false);
+
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" className="text-xl">
-          ☰
+    <Sheet open={open} onOpenChange={setOpen}>
+      <SheetTrigger asChild>
+        <Button variant="ghost" size="icon" className="md:hidden">
+          <MenuIcon className="w-6 h-6" />
         </Button>
-      </DialogTrigger>
+      </SheetTrigger>
 
-      <DialogContent
-        {...swipeHandlers}
-        className="!p-0 !border-none !rounded-none min-h-[calc(100vh-8rem)] !bg-background flex flex-col"
-      >
-        <DialogTitle className="text-2xl font-bold text-center mb-4">
-          Menu
-        </DialogTitle>
-
-        <div className="flex flex-col gap-3 mb-6">
-          {mainItems.map((item) => (
-            <Link href={item.url} key={item.title} passHref legacyBehavior>
-              <Button
-                variant="outline"
-                size="lg"
-                className="w-full justify-start text-xl py-5 font-bold shadow-md"
-                onClick={() => setOpen(false)}
-              >
-                {item?.icon && <item.icon className="mr-3 w-6 h-6" />}
-                <span>{item.title}</span>
-              </Button>
-            </Link>
-          ))}
-        </div>
-        <h2 className="text-lg font-semibold text-center mb-2">
-          {user ? 'Your Account' : 'Guest Options'}
-        </h2>
-        <div className="flex flex-col gap-2 mb-4">
-          {user
-            ? userItems.map((item) => (
-                <Link href={item.url} key={item.title} passHref legacyBehavior>
+      <SheetContent side="left" className="w-72 sm:w-80 p-6">
+        <div className="space-y-6">
+          <div>
+            <DialogTitle className="mb-6">Menu</DialogTitle>
+            <nav className="space-y-2 flex flex-col gap-2">
+              {mainItems.map((item) => (
+                <Link href={item.url} key={item.title}>
                   <Button
                     variant="outline"
-                    size="lg"
-                    className="w-full justify-start text-base py-3"
-                    onClick={() => setOpen(false)}
+                    className="w-full justify-start text-base"
+                    onClick={handleClose}
                   >
-                    <item.icon className="mr-2 w-5 h-5" />
-                    <span>{item.title}</span>
-                  </Button>
-                </Link>
-              ))
-            : anonymousItems.map((item) => (
-                <Link href={item.url} key={item.title} passHref legacyBehavior>
-                  <Button
-                    variant="ghost"
-                    size="lg"
-                    className="w-full justify-start text-base py-3"
-                    onClick={() => setOpen(false)}
-                  >
-                    <item.icon className="mr-2 w-5 h-5" />
-                    <span>{item.title}</span>
+                    {item.icon && <item.icon className="mr-3 w-5 h-5" />}
+                    {item.title}
                   </Button>
                 </Link>
               ))}
+            </nav>
+          </div>
+
+          <div className="border-t pt-4">
+            <h2 className="text-sm text-muted-foreground mb-2">
+              {user ? 'Your Account' : 'Guest Options'}
+            </h2>
+            <nav className="space-y-2 flex flex-col gap-2">
+              {(user ? userItems : anonymousItems).map((item) => (
+                <Link href={item.url} key={item.title}>
+                  <Button
+                    variant={'outline'}
+                    className="w-full justify-start text-base"
+                    onClick={handleClose}
+                  >
+                    <item.icon className="mr-3 w-5 h-5" />
+                    {item.title}
+                  </Button>
+                </Link>
+              ))}
+            </nav>
+          </div>
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 };

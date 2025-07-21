@@ -1,3 +1,4 @@
+// ...existing code...
 import {
   Controller,
   Post,
@@ -9,6 +10,7 @@ import {
   NotFoundException,
   Body,
   BadRequestException,
+  Put,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, isValidObjectId } from 'mongoose';
@@ -16,11 +18,21 @@ import { Recipe } from '../recipes/recipe.schema';
 import { User } from './user.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request } from 'express';
+import { OpenAIService } from '../openai/openai.service';
 // JwtUser type from jwt.strategy validate()
 type JwtUser = { userId: string; email: string };
 // UserDecorator: use @Req() for now since custom decorator is missing
-import { IsString } from 'class-validator';
+import { IsString, IsOptional, IsIn } from 'class-validator';
 import { Type } from 'class-transformer';
+class UpdateSettingsDto {
+  @IsOptional()
+  @IsString()
+  displayName?: string;
+
+  @IsOptional()
+  @IsIn(['auto', 'dark', 'light'])
+  theme?: 'auto' | 'dark' | 'light';
+}
 
 class FavoriteRecipeDto {
   @IsString()
@@ -33,8 +45,70 @@ class FavoriteRecipeDto {
 export class UsersController {
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
-    @InjectModel(Recipe.name) private readonly recipeModel: Model<Recipe>
+    @InjectModel(Recipe.name) private readonly recipeModel: Model<Recipe>,
+    private readonly openaiService: OpenAIService
   ) {}
+
+  // Get recipes authored by the current user
+  @UseGuards(JwtAuthGuard)
+  @Get('my-recipes')
+  async getMyRecipes(@Req() req: Request): Promise<{ recipes: Recipe[] }> {
+    if (!req.user) throw new BadRequestException('User not found in request');
+    const user: JwtUser = req.user as JwtUser;
+    // Assumes Recipe schema has an 'author' field referencing User._id
+    const recipes = await this.recipeModel
+      .find({ author: user.userId })
+      .lean()
+      .exec();
+    return { recipes };
+  }
+
+  // Update user settings (displayName, theme)
+  @UseGuards(JwtAuthGuard)
+  @Put('settings')
+  async updateSettings(
+    @Req() req: Request,
+    @Body() dto: UpdateSettingsDto
+  ): Promise<{ displayName: string; theme: string }> {
+    if (!req.user) throw new BadRequestException('User not found in request');
+    const user: JwtUser = req.user as JwtUser;
+    const userDoc = await this.userModel.findById(user.userId).exec();
+    if (!userDoc) throw new NotFoundException('User not found');
+    if (dto.displayName !== undefined) userDoc.displayName = dto.displayName;
+    if (dto.theme !== undefined) userDoc.theme = dto.theme;
+    try {
+      await userDoc.save();
+    } catch (err: any) {
+      // Mongo duplicate key error code
+      if (err.code === 11000 && err.keyPattern?.displayName) {
+        throw new BadRequestException('Display name is already taken.');
+      }
+      throw err;
+    }
+    return { displayName: userDoc.displayName, theme: userDoc.theme };
+  }
+  // Generate a unique funny username using OpenAI
+  @UseGuards(JwtAuthGuard)
+  @Get('generate-user-name')
+  async generateFunnyName(): Promise<{ displayName: string }> {
+    let attempt = 0;
+    const maxAttempts = 5;
+    let displayName = '';
+    while (attempt < maxAttempts) {
+      // You can pass dummy profile info or randomize for more variety
+      displayName = await this.openaiService.generateUsername({
+        name: 'User',
+        email: `user${Date.now()}@example.com`,
+      });
+      // Check uniqueness in DB
+      const exists = await this.userModel.exists({ displayName });
+      if (!exists) break;
+      attempt++;
+    }
+    if (!displayName)
+      throw new BadRequestException('Failed to generate username');
+    return { displayName };
+  }
 
   // Add recipe to favorites
   @UseGuards(JwtAuthGuard)

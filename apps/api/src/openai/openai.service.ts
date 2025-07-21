@@ -20,7 +20,7 @@ export class OpenAIService {
   }
 
   async generateUsername(profile: { name: string; email: string }) {
-    const prompt = `Suggest a unique, short, cook chef and friendly and funny username for this Google profile: Name: ${profile.name} Email: ${profile.email}`;
+    const prompt = `Suggest a unique, short, chef/cooking-themed, friendly, and funny username for this Google profile. If possible, incorporate the user's first name in a creative or humorous way. Return ONLY the username as a plain string, nothing else. Name: ${profile.name} Email: ${profile.email}`;
 
     const completion = await this.openai.chat.completions.create({
       model: 'gpt-4o-mini',

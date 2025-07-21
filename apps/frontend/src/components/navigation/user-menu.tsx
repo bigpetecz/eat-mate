@@ -12,8 +12,15 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { User } from '@/app/auth/authStore';
-import { BookIcon, HeartIcon, LogInIcon, SettingsIcon } from 'lucide-react';
-import { FC } from 'react';
+import {
+  BookIcon,
+  HeartIcon,
+  LogInIcon,
+  PencilIcon,
+  SettingsIcon,
+} from 'lucide-react';
+import { FC, useEffect } from 'react';
+import { useTheme } from 'next-themes';
 
 interface UserProps {
   user: User;
@@ -21,6 +28,11 @@ interface UserProps {
 
 export const UserMenu: FC<UserProps> = ({ user }) => {
   const { t } = useTranslation();
+  const { setTheme } = useTheme();
+
+  useEffect(() => {
+    setTheme(user?.theme || 'system');
+  }, [user, setTheme]);
 
   const initials = user?.displayName
     ? user.displayName
@@ -68,10 +80,16 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
               )}
             </div>
             <DropdownMenuSeparator />
+            <Link href="/my-recipes">
+              <DropdownMenuItem className="cursor-pointer">
+                <PencilIcon className="size-4" />
+                {t('My Recipes')}
+              </DropdownMenuItem>
+            </Link>
             <Link href="/favorites">
               <DropdownMenuItem className="cursor-pointer">
                 <HeartIcon className="size-4" />
-                {t('Favorites')}
+                {t('Favorite recipes')}
               </DropdownMenuItem>
             </Link>
             <Link href="/settings">

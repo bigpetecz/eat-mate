@@ -352,7 +352,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                   <FormItem className="w-full">
                     <FormControl>
                       <Input
-                        placeholder="What do you want to cook today?"
+                        placeholder="What do you want to cook?"
                         {...field}
                       />
                     </FormControl>

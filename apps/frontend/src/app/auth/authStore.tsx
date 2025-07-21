@@ -4,6 +4,7 @@ export interface User {
   _id: string;
   displayName: string;
   email: string;
+  theme: 'auto' | 'light' | 'dark';
   picture?: string;
 }
 

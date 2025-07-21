@@ -13,8 +13,15 @@ export class User extends Document {
   @Prop()
   password: string;
 
-  @Prop({ required: true })
+  @Prop({ required: true, unique: true })
   displayName: string;
+
+  @Prop({
+    type: String,
+    enum: ['auto', 'dark', 'light'],
+    default: 'auto',
+  })
+  theme: 'auto' | 'dark' | 'light';
 
   @Prop()
   picture: string;
