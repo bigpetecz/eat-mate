@@ -1,0 +1,13 @@
+{
+  "title": "Nastavení",
+  "description": "Spravujte nastavení účtu a předvolby.",
+  "displayName": "Zobrazované jméno",
+  "theme": "Motiv",
+  "themeAuto": "Automaticky",
+  "themeDark": "Tmavý",
+  "themeLight": "Světlý",
+  "save": "Uložit nastavení",
+  "success": "Nastavení bylo úspěšně aktualizováno!",
+  "error": "Nepodařilo se aktualizovat nastavení. Zkuste to prosím znovu.",
+  "generateName": "Generovat vtipné jméno"
+}

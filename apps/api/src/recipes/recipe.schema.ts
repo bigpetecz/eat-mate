@@ -1,3 +1,11 @@
+// Translation reference type
+export interface RecipeTranslationRef {
+  language: RecipeLanguage;
+  recipeId: mongoose.Types.ObjectId;
+}
+import slugify from 'slugify';
+// Supported languages for recipes (expand as needed)
+export type RecipeLanguage = 'en' | 'cs';
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { User } from '../users/user.schema';
@@ -131,6 +139,28 @@ export class Recipe extends mongoose.Document {
   @Prop({ required: true, trim: true })
   title: string;
 
+  @Prop({ required: true, default: 'en' })
+  language: RecipeLanguage;
+
+  // SEO-friendly, unique, English slug
+  @Prop({ required: true, unique: true, trim: true })
+  slug: string;
+
+  // References to the same recipe in other languages
+  @Prop({
+    type: [
+      {
+        language: { type: String, required: true },
+        recipeId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: 'Recipe',
+          required: true,
+        },
+      },
+    ],
+    default: [],
+  })
+  translations: RecipeTranslationRef[];
   @Prop({ required: true })
   description: string;
 
@@ -180,3 +210,20 @@ export class Recipe extends mongoose.Document {
 }
 
 export const RecipeSchema = SchemaFactory.createForClass(Recipe);
+
+// Pre-save hook to auto-generate slug from title (in English) if not set
+RecipeSchema.pre('validate', function (next) {
+  if (!this.slug && this.title) {
+    // Use slugify to generate a URL-safe slug in English
+    this.slug = slugify(this.title, {
+      lower: true,
+      strict: true,
+      locale: 'en',
+    });
+  }
+  // Ensure language is set
+  if (!this.language) {
+    this.language = 'en';
+  }
+  next();
+});

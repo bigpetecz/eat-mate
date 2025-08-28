@@ -6,6 +6,7 @@ import { UsersModule } from '../users/users.module';
 import { AuthModule } from '../auth/auth.module';
 import { PingService } from './ping.service';
 import { HttpModule } from '@nestjs/axios';
+import { TranslationModule } from '../translation/translation.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { HttpModule } from '@nestjs/axios';
     }),
     DatabaseModule,
     RecipesModule,
+    TranslationModule,
     UsersModule,
     AuthModule,
     HttpModule,

@@ -1,7 +1,14 @@
 'use client';
-import { usePathname, useRouter } from 'next/navigation';
-import { useTranslation } from 'react-i18next';
-import { Combobox } from '@/components/ui/combobox';
+import { useParams, usePathname, useRouter } from 'next/navigation';
+
+import { i18n, type Locale, resolveLocalizedPath } from '../i18n';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 const languages = [
   { code: 'en', label: 'English', icon: <span>🇬🇧</span> },
@@ -9,34 +16,61 @@ const languages = [
 ];
 
 export function LanguageSwitcher() {
-  const { i18n } = useTranslation();
   const router = useRouter();
+  const params = useParams();
   const pathname = usePathname();
 
-  const handleChange = (newLocale: string) => {
-    // Next.js i18n routing: /en/page, /cs/page, etc.
-    const segments = pathname.split('/').filter(Boolean);
-    if (languages.some((l) => l.code === segments[0])) {
-      segments[0] = newLocale;
-    } else {
-      segments.unshift(newLocale);
+  const handleChange = async (value: string) => {
+    const locale = value as Locale;
+    if (!i18n.locales.includes(locale)) return;
+
+    // Check if on recipe detail page (params.slug and params.language)
+    if (params?.slug && params?.language) {
+      try {
+        // Call recipe slug API to get slugMap
+        const res = await fetch(
+          `/api/recipes/${params.language}/recipe/${params.slug}`
+        );
+        const data = await res.json();
+        if (data?.slugMap && data.slugMap[locale]) {
+          // Build the new path for the recipe detail page
+          const newPath = `/${locale}/${
+            locale === 'en' ? 'recipe' : 'recept'
+          }/${data.slugMap[locale]}`;
+          router.push(newPath);
+          return;
+        }
+      } catch (err) {
+        // fallback: just swap language in path
+        const newPath = resolveLocalizedPath(pathname, locale);
+        router.push(newPath);
+        return;
+      }
     }
-    const newPath = '/' + segments.join('/');
+    // fallback: just swap language in path
+    const newPath = resolveLocalizedPath(pathname, locale);
     router.push(newPath);
-    i18n.changeLanguage(newLocale);
   };
-  console.log('Current language:', i18n.language);
 
   return (
-    <Combobox
-      options={languages.map((l) => ({
-        label: l.label,
-        value: l.code,
-        icon: l.icon,
-      }))}
-      value={i18n.language}
-      onChange={handleChange}
-      selectPlaceholder="Select language"
-    />
+    <Select
+      value={
+        typeof params.language === 'string'
+          ? params.language
+          : params.language?.[0] ?? 'en'
+      }
+      onValueChange={handleChange}
+    >
+      <SelectTrigger>
+        <SelectValue placeholder="Select language" />
+      </SelectTrigger>
+      <SelectContent>
+        {languages.map(({ code, label, icon }) => (
+          <SelectItem key={code} value={code}>
+            {icon} {label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 }

@@ -1,7 +1,15 @@
 // Central Recipe type for frontend
+export interface RecipeTranslationRef {
+  language: string;
+  recipeId: string;
+}
+
 export interface Recipe {
   _id: string;
   title: string;
+  slug: string;
+  language: string;
+  translations?: RecipeTranslationRef[];
   country?: string;
   createdAt: string;
   images?: string[];

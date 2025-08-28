@@ -1,0 +1,20 @@
+{
+  "title": "Zaregistrujte si nový účet",
+  "description": "Zadejte své údaje pro registraci",
+  "name": "Jméno",
+  "email": "E-mail",
+  "password": "Heslo",
+  "nameRequired": "Jméno je povinné",
+  "emailRequired": "E-mail je povinný",
+  "invalidEmail": "Neplatná e-mailová adresa",
+  "passwordRequired": "Heslo je povinné",
+  "passwordMinLength": "Heslo musí mít alespoň 6 znaků",
+  "registrationFailed": "Registrace se nezdařila",
+  "networkError": "Chyba sítě",
+  "signUp": "Zaregistrovat se",
+  "signingUp": "Registruji...",
+  "or": "nebo",
+  "signUpWithGoogle": "Zaregistrovat se přes Google",
+  "alreadyHaveAccount": "Již máte účet?",
+  "login": "Přihlásit se"
+}

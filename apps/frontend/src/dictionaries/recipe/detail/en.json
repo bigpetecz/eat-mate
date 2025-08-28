@@ -1,0 +1,9 @@
+{
+  "ingredients": "Ingredients",
+  "instructions": "Instructions",
+  "prepTime": "Prep Time",
+  "cookTime": "Cook Time",
+  "servings": "Servings",
+  "description": "Description",
+  "mealType": "Meal Type"
+}

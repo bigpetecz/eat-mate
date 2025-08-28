@@ -1,0 +1,12 @@
+{
+  "title": "Přihlaste se ke svému účtu",
+  "description": "Zadejte svůj e-mail pro přihlášení ke svému účtu",
+  "email": "E-mail",
+  "password": "Heslo",
+  "forgotPassword": "Zapomněli jste heslo?",
+  "login": "Přihlásit se",
+  "loggingIn": "Přihlašuji...",
+  "loginWithGoogle": "Přihlásit se přes Google",
+  "noAccount": "Nemáte účet?",
+  "signUp": "Zaregistrovat se"
+}

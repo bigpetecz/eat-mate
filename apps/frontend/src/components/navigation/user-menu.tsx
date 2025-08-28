@@ -1,7 +1,6 @@
 'use client';
 
 import Link from 'next/link';
-import { useTranslation } from 'react-i18next';
 
 import {
   DropdownMenu,
@@ -11,7 +10,7 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User } from '@/app/auth/authStore';
+import { User } from '@/app/pages/auth/authStore';
 import {
   BookIcon,
   HeartIcon,
@@ -21,17 +20,23 @@ import {
 } from 'lucide-react';
 import { FC, useEffect } from 'react';
 import { useTheme } from 'next-themes';
+import { useParams } from 'next/navigation';
+import { getLocalizedRoute, Locale } from '@/i18n';
 
 interface UserProps {
   user: User;
+  commonDictionary: Record<string, string>;
 }
 
-export const UserMenu: FC<UserProps> = ({ user }) => {
-  const { t } = useTranslation();
+export const UserMenu: FC<UserProps> = ({ user, commonDictionary }) => {
   const { setTheme } = useTheme();
+  const params = useParams();
+  const language = (
+    typeof params?.language === 'string' ? params.language : 'en'
+  ) as Locale;
 
   useEffect(() => {
-    setTheme(user?.theme || 'system');
+    setTheme((user?.theme === 'auto' ? 'system' : user?.theme) || 'system');
   }, [user, setTheme]);
 
   const initials = user?.displayName
@@ -42,6 +47,9 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
         .toUpperCase()
         .slice(0, 2)
     : 'U';
+
+  // Use dictionary for all t() strings
+  const t = (key: string) => commonDictionary[key] || key;
 
   return (
     <DropdownMenu>
@@ -80,26 +88,26 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
               )}
             </div>
             <DropdownMenuSeparator />
-            <Link href="/my-recipes">
+            <Link href={getLocalizedRoute('myRecipes', language)}>
               <DropdownMenuItem className="cursor-pointer">
                 <PencilIcon className="size-4" />
                 {t('My Recipes')}
               </DropdownMenuItem>
             </Link>
-            <Link href="/favorites">
+            <Link href={getLocalizedRoute('favorites', language)}>
               <DropdownMenuItem className="cursor-pointer">
                 <HeartIcon className="size-4" />
                 {t('Favorite recipes')}
               </DropdownMenuItem>
             </Link>
-            <Link href="/settings">
+            <Link href={getLocalizedRoute('userSettings', language)}>
               <DropdownMenuItem className="cursor-pointer">
                 <SettingsIcon className="size-4" />
                 {t('Settings')}
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
-            <Link href="/logout">
+            <Link href={getLocalizedRoute('logout', language)}>
               <DropdownMenuItem className="cursor-pointer">
                 <LogInIcon className="size-4" />
                 {t('Logout')}
@@ -108,14 +116,14 @@ export const UserMenu: FC<UserProps> = ({ user }) => {
           </>
         ) : (
           <>
-            <Link href="/sign-in">
+            <Link href={getLocalizedRoute('login', language)}>
               <DropdownMenuItem className="cursor-pointer">
                 <LogInIcon className="size-4" />
                 {t('Login')}
               </DropdownMenuItem>
             </Link>
             <DropdownMenuSeparator />
-            <Link href="/sign-up">
+            <Link href={getLocalizedRoute('signUp', language)}>
               <DropdownMenuItem asChild className="cursor-pointer">
                 <div className="flex items-center gap-2">
                   <BookIcon className="size-4" />

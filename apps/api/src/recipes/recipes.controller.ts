@@ -37,26 +37,88 @@ export class RecipesController {
     private readonly cloudinaryService: CloudinaryService
   ) {}
 
-  // Create a new recipe
+  // Create a new recipe (optionally as a translation of another recipe)
   @UseGuards(JwtAuthGuard)
   @Post()
   async create(
     @UserDecorator() user: JwtUser,
-    @Body() createRecipeDto: CreateRecipeDto
+    @Body() createRecipeDto: CreateRecipeDto & { translationOf?: string }
   ) {
     const author = user.userId;
-    return new this.recipeModel({ ...createRecipeDto, author }).save();
+    const newRecipe = new this.recipeModel({ ...createRecipeDto, author });
+    // If this is a translation, link both recipes
+    if (createRecipeDto.translationOf) {
+      const original = await this.recipeModel.findById(
+        createRecipeDto.translationOf
+      );
+      if (original) {
+        // Ensure recipeId is always a Types.ObjectId
+        const originalId =
+          original._id instanceof Types.ObjectId
+            ? original._id
+            : new Types.ObjectId(original._id);
+        // Save newRecipe first to get its _id
+        await newRecipe.save();
+        const newRecipeId =
+          newRecipe._id instanceof Types.ObjectId
+            ? newRecipe._id
+            : new Types.ObjectId(newRecipe._id);
+        // Add reference to each other's translations, avoiding duplicates
+        newRecipe.translations = [
+          ...(newRecipe.translations || []),
+          ...(original.translations || []),
+          { language: original.language, recipeId: originalId },
+        ].filter(
+          (t, i, arr) =>
+            arr.findIndex(
+              (x) =>
+                x.language === t.language &&
+                String(x.recipeId) === String(t.recipeId)
+            ) === i
+        );
+        original.translations = [
+          ...(original.translations || []),
+          { language: newRecipe.language, recipeId: newRecipeId },
+        ].filter(
+          (t, i, arr) =>
+            arr.findIndex(
+              (x) =>
+                x.language === t.language &&
+                String(x.recipeId) === String(t.recipeId)
+            ) === i
+        );
+        await original.save();
+        await newRecipe.save();
+        return newRecipe;
+      }
+    }
+    return newRecipe.save();
+  }
+
+  // Get all translations for a recipe by ID
+  @Get(':id/translations')
+  async getTranslations(@Param('id') id: string) {
+    if (!isValidObjectId(id)) throw new BadRequestException('Invalid ID');
+    const recipe = await this.recipeModel.findById(id).exec();
+    if (!recipe) throw new NotFoundException('Recipe not found');
+    // Populate translation recipe details
+    const translations = await this.recipeModel.find({
+      _id: { $in: (recipe.translations || []).map((t) => t.recipeId) },
+    });
+    return translations;
   }
 
   // Get all recipes
-  @Get()
-  async findAll() {
-    return this.recipeModel.find().exec();
+  @Get(`:language`)
+  async findAll(@Param('language') language: string) {
+    // Explicitly include slug in the result (should be included by default, but this ensures it)
+    return this.recipeModel.find({ language }).select('+slug').exec();
   }
 
   // Filter recipes with advanced query params
-  @Get('filter')
+  @Get(':language/filter')
   async filterRecipes(
+    @Param('language') language: string,
     @Query('search') search?: string,
     @Query('mealType') mealType?: string,
     @Query('diets') diets?: string | string[],
@@ -158,8 +220,40 @@ export class RecipesController {
         $or: [{ 'ai.estimatedCost': costCond }, { 'ai.estimatedCost': null }],
       });
     }
-    const query = andConditions.length > 0 ? { $and: andConditions } : {};
+    // Always filter by language
+    const query =
+      andConditions.length > 0
+        ? { $and: [{ language }, ...andConditions] }
+        : { language };
     return this.recipeModel.find(query).exec();
+  }
+
+  // Get a recipe by language and slug (SEO-friendly)
+  @Get(':language/recipe/:slug')
+  async findBySlug(
+    @Param('language') language: string,
+    @Param('slug') slug: string
+  ) {
+    const recipe = await this.recipeModel.findOne({ language, slug }).exec();
+    if (!recipe) throw new NotFoundException('Recipe not found');
+
+    // Build a map of language -> slug for all translations (including self)
+    const slugMap: Record<string, string> = { [recipe.language]: recipe.slug };
+    if (recipe.translations?.length) {
+      const translationRecipes = await this.recipeModel
+        .find({
+          _id: { $in: recipe.translations.map((t) => t.recipeId) },
+        })
+        .select('language slug')
+        .lean();
+      for (const t of translationRecipes) {
+        if (t.language && t.slug) {
+          slugMap[t.language] = t.slug;
+        }
+      }
+    }
+    // Return recipe plus slugMap
+    return { ...recipe.toObject(), slugMap };
   }
 
   // Get a recipe by ID (with ObjectId validation)

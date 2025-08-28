@@ -1,0 +1,20 @@
+{
+  "title": "Sign up for a new account",
+  "description": "Enter your details below to sign up",
+  "name": "Name",
+  "email": "Email",
+  "password": "Password",
+  "nameRequired": "Name is required",
+  "emailRequired": "Email is required",
+  "invalidEmail": "Invalid email address",
+  "passwordRequired": "Password is required",
+  "passwordMinLength": "Password must be at least 6 characters",
+  "registrationFailed": "Registration failed",
+  "networkError": "Network error",
+  "signUp": "Sign up",
+  "signingUp": "Signing up...",
+  "or": "or",
+  "signUpWithGoogle": "Sign Up with Google",
+  "alreadyHaveAccount": "Already have an account?",
+  "login": "Login"
+}

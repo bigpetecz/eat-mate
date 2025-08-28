@@ -2,8 +2,8 @@
 
 import * as React from 'react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import { PlusIcon } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
 
 import {
   NavigationMenu,
@@ -11,6 +11,7 @@ import {
   NavigationMenuList,
   navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { getLocalizedRoute, Locale } from '@/i18n';
 
 // const components: { title: string; href: string; description: string }[] = [
 //   {
@@ -70,38 +71,29 @@ import {
 //   );
 // }
 
-export function Navigation() {
-  const { t } = useTranslation();
-  // const user = useAuthStore((s) => s.user);
-  // const logout = useAuthStore((s) => s.logout);
+interface NavigationProps {
+  commonDictionary: Record<string, string>;
+}
+
+export function Navigation({ commonDictionary }: NavigationProps) {
+  const params = useParams();
+  const language = (
+    typeof params?.language === 'string' ? params.language : 'en'
+  ) as Locale;
   return (
     <NavigationMenu viewport={false}>
       <NavigationMenuList>
         <NavigationMenuItem asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/recipe/create">
+          <Link href={getLocalizedRoute('recipeCreate', language)}>
             <PlusIcon />
-            {t('Add recipe')}
+            {commonDictionary.addRecipe}
           </Link>
         </NavigationMenuItem>
         <NavigationMenuItem asChild className={navigationMenuTriggerStyle()}>
-          <Link href="/discover">{t('Discover recipes')}</Link>
+          <Link href={getLocalizedRoute('discover', language)}>
+            {commonDictionary.discoverRecipes}
+          </Link>
         </NavigationMenuItem>
-        {/* <NavigationMenuItem>
-          <NavigationMenuTrigger>{t('Recipes')}</NavigationMenuTrigger>
-          <NavigationMenuContent>
-            <ul className="grid w-[400px] gap-2 md:w-[500px] md:grid-cols-2 lg:w-[600px]">
-              {components.map((component) => (
-                <ListItem
-                  key={component.title}
-                  title={t(component.title)}
-                  href={component.href}
-                >
-                  {t(component.description)}
-                </ListItem>
-              ))}
-            </ul>
-          </NavigationMenuContent>
-        </NavigationMenuItem> */}
       </NavigationMenuList>
     </NavigationMenu>
   );

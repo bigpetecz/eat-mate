@@ -1,26 +1,31 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { getLocalizedRoute, Locale } from '@/i18n';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChefHat, Utensils, EggFried } from 'lucide-react';
 import Link from 'next/link';
+import { useParams } from 'next/navigation';
 import React, { useEffect, useState } from 'react';
 
-const slogans = [
-  'Inspire others with your cooking.',
-  'Plan your meals with confidence.',
-  'Eat smarter, together.',
-];
-
-const descriptions = [
-  'Motivate other home cooks with your delicious creations.',
-  'Create meal lists for your day or week and stay on track.',
-  'Join a cozy food community and eat well within your budget.',
-];
-
-export default function Hero() {
+export default function Banner({
+  dictionary,
+}: {
+  dictionary?: Record<string, string>;
+}) {
   const [index, setIndex] = useState(0);
-
+  console.log(dictionary);
+  const { language = 'en' } = useParams();
+  const slogans = [
+    dictionary?.heroSlogan1,
+    dictionary?.heroSlogan2,
+    dictionary?.heroSlogan3,
+  ];
+  const descriptions = [
+    dictionary?.heroSloganDescription1,
+    dictionary?.heroSloganDescription2,
+    dictionary?.heroSloganDescription3,
+  ];
   useEffect(() => {
     const interval = setInterval(() => {
       setIndex((prev) => (prev + 1) % slogans.length);
@@ -99,22 +104,22 @@ export default function Hero() {
         </div>
         {/* Buttons: always at bottom on mobile, centered on desktop */}
         <div className="w-full max-w-xl mx-auto flex flex-col md:flex-row gap-3 justify-center items-center mt-2 md:mt-0 pb-4">
-          <Link href={'/sign-up'}>
+          <Link href={getLocalizedRoute('signUp', language as Locale)}>
             <Button
               size="lg"
               variant="default"
               className="cursor-pointer dark:bg-orange-700 dark:text-yellow-100 dark:hover:bg-orange-800"
             >
-              Sign Up & Share
+              {dictionary?.signUpAndShare}
             </Button>
           </Link>
-          <Link href={'/discover'}>
+          <Link href={getLocalizedRoute('discover', language as Locale)}>
             <Button
               size="lg"
               variant="outline"
               className="cursor-pointer dark:border-yellow-200 dark:text-yellow-200 dark:hover:bg-orange-900/30"
             >
-              Discover Recipes
+              {dictionary?.discoverRecipes}
             </Button>
           </Link>
         </div>

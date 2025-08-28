@@ -1,0 +1,13 @@
+{
+  "title": "Settings",
+  "description": "Manage your account settings and preferences.",
+  "displayName": "Display Name",
+  "theme": "Theme",
+  "themeAuto": "Auto",
+  "themeDark": "Dark",
+  "themeLight": "Light",
+  "save": "Save Settings",
+  "success": "Settings updated successfully!",
+  "error": "Failed to update settings. Please try again.",
+  "generateName": "Generate Funny Name"
+}

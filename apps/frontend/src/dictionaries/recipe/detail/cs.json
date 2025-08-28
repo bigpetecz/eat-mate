@@ -1,0 +1,9 @@
+{
+  "ingredients": "Ingredience",
+  "instructions": "Postup",
+  "prepTime": "Doba přípravy",
+  "cookTime": "Doba vaření",
+  "servings": "Porce",
+  "description": "Popis",
+  "mealType": "Typ jídla"
+}

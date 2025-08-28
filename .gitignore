@@ -49,3 +49,4 @@ out
 
 # Config
 .env.local
+google-key.json

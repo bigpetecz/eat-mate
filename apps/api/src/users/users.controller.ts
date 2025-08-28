@@ -51,13 +51,16 @@ export class UsersController {
 
   // Get recipes authored by the current user
   @UseGuards(JwtAuthGuard)
-  @Get('my-recipes')
-  async getMyRecipes(@Req() req: Request): Promise<{ recipes: Recipe[] }> {
+  @Get(':language/my-recipes')
+  async getMyRecipes(
+    @Req() req: Request,
+    @Param('language') language: string
+  ): Promise<{ recipes: Recipe[] }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
     // Assumes Recipe schema has an 'author' field referencing User._id
     const recipes = await this.recipeModel
-      .find({ author: user.userId })
+      .find({ author: user.userId, language })
       .lean()
       .exec();
     return { recipes };
@@ -90,15 +93,23 @@ export class UsersController {
   // Generate a unique funny username using OpenAI
   @UseGuards(JwtAuthGuard)
   @Get('generate-user-name')
-  async generateFunnyName(): Promise<{ displayName: string }> {
+  async generateFunnyName(
+    @Req() req: Request
+  ): Promise<{ displayName: string }> {
+    const displayNameParam = req.query.displayName as string;
+    const emailParam = req.query.email as string;
+    if (!displayNameParam || !emailParam) {
+      throw new BadRequestException(
+        'Both displayName and email must be provided in query parameters.'
+      );
+    }
     let attempt = 0;
     const maxAttempts = 5;
     let displayName = '';
     while (attempt < maxAttempts) {
-      // You can pass dummy profile info or randomize for more variety
       displayName = await this.openaiService.generateUsername({
-        name: 'User',
-        email: `user${Date.now()}@example.com`,
+        name: displayNameParam,
+        email: emailParam,
       });
       // Check uniqueness in DB
       const exists = await this.userModel.exists({ displayName });
@@ -167,8 +178,11 @@ export class UsersController {
 
   // Get user's favorite recipes
   @UseGuards(JwtAuthGuard)
-  @Get('favorites')
-  async getFavorites(@Req() req: Request): Promise<{ recipes: Recipe[] }> {
+  @Get(':language/favorites')
+  async getFavorites(
+    @Req() req: Request,
+    @Param('language') language: string
+  ): Promise<{ recipes: Recipe[] }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
     const userDoc = await this.userModel.findById(user.userId).lean().exec();
@@ -178,7 +192,7 @@ export class UsersController {
       : [];
     if (!favoriteIds.length) return { recipes: [] };
     const recipes = await this.recipeModel
-      .find({ _id: { $in: favoriteIds } })
+      .find({ _id: { $in: favoriteIds }, language })
       .lean()
       .exec();
     return { recipes };
