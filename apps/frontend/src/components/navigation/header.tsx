@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { Logo } from '@/components/brand/logo';
 import { Navigation } from '@/components/navigation/navigation';
 import { UserMenu } from '@/components/navigation/user-menu';
-import { getUser } from '../../app/pages/auth/getUser';
+import { getUser } from '../../app/auth/getUser';
 import { MobileMenu } from './mobile-menu';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { getLocalizedRoute, Locale } from '@/i18n';

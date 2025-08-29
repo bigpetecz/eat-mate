@@ -90,7 +90,7 @@ export function Navigation({ commonDictionary }: NavigationProps) {
           </Link>
         </NavigationMenuItem>
         <NavigationMenuItem asChild className={navigationMenuTriggerStyle()}>
-          <Link href={getLocalizedRoute('discover', language)}>
+          <Link href={getLocalizedRoute('discover', language, {})}>
             {commonDictionary.discoverRecipes}
           </Link>
         </NavigationMenuItem>

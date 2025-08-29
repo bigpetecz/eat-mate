@@ -1,7 +1,7 @@
 'use client';
 
 import apiClient from '@/app/apiClient';
-import { User } from '@/app/pages/auth/authStore';
+import { User } from '@/app/auth/authStore';
 import { RecipeFormValues } from '@/components/recipe/recipe-form';
 import RecipeForm from '@/components/recipe/recipe-form';
 import { Spinner } from '@/components/ui/spinner';
@@ -11,9 +11,10 @@ import { toast } from 'sonner';
 
 interface EditRecipeFormProps {
   user: User;
+  dict: Record<string, string>;
 }
 
-const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user }) => {
+const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
   const { id: recipeId } = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
@@ -110,6 +111,7 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user }) => {
 
   return (
     <RecipeForm
+      dict={dict}
       onSubmit={onSubmit}
       defaultValues={{
         title: recipe.title,

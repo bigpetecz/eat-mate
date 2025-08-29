@@ -1,1 +1,2 @@
-export { default } from '../../pages/sign-in/page';
+import SignInPage from '@/app/_pages/sign-in/page';
+export default SignInPage;

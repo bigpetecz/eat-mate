@@ -113,7 +113,7 @@ export default function Banner({
               {dictionary?.signUpAndShare}
             </Button>
           </Link>
-          <Link href={getLocalizedRoute('discover', language as Locale)}>
+          <Link href={getLocalizedRoute('discover', language as Locale, {})}>
             <Button
               size="lg"
               variant="outline"

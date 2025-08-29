@@ -1,1 +1,1 @@
-export { default } from '../../pages/my-recipes/page';
+export { default } from '../../_pages/my-recipes/page';

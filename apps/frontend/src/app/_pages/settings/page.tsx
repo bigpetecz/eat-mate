@@ -1,7 +1,7 @@
 import { Card } from '@/components/ui/card';
 import { SettingsForm } from './SettingsForm';
 import PrivatePage from '@/components/auth/PrivatePage';
-import { getUser } from '../auth/getUser';
+import { getUser } from '../../auth/getUser';
 import { getDictionary } from '@/dictionaries/dictionaries';
 import { Locale } from '@/i18n';
 

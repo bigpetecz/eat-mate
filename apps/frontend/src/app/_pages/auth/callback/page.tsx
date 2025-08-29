@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '../authStore';
+import { useAuthStore } from '../../../auth/authStore';
 import { Spinner } from '@/components/ui/spinner';
 
 export default function AuthCallbackPage() {

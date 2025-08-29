@@ -23,8 +23,8 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import apiClient from '../../apiClient';
-import { User } from '../auth/authStore';
+import apiClient from '@/app/apiClient';
+import { User } from '../../auth/authStore';
 
 const settingsSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters'),

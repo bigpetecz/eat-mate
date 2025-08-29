@@ -1,6 +1,6 @@
 import { Card } from '@/components/ui/card';
 import PrivatePage from '@/components/auth/PrivatePage';
-import { getUser } from '@/app/pages/auth/getUser';
+import { getUser } from '@/app/auth/getUser';
 import { CreateRecipeForm } from './create-recipe.form';
 import { getDictionary } from '@/dictionaries/dictionaries';
 import { Locale } from '@/i18n';

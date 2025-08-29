@@ -1,7 +1,7 @@
 'use client';
 
 import apiClient from '@/app/apiClient';
-import { User } from '@/app/pages/auth/authStore';
+import { User } from '@/app/auth/authStore';
 import RecipeForm from '@/components/recipe/recipe-form';
 import { useRouter } from 'next/navigation';
 import { FC } from 'react';

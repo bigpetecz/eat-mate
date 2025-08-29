@@ -15,7 +15,7 @@ import {
   Menu as MenuIcon,
   PencilIcon,
 } from 'lucide-react';
-import { User } from '../../app/pages/auth/authStore';
+import { User } from '../../app/auth/authStore';
 import { DialogTitle } from '@/components/ui/dialog';
 
 interface MobileMenuProps {

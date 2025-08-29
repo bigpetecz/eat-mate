@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import apiClient from '../../apiClient';
 import { Spinner } from '@/components/ui/spinner';
-import { useAuthStore } from '../auth/authStore';
+import { useAuthStore } from '../../auth/authStore';
 
 export default function LogoutPage() {
   const logout = useAuthStore((s) => s.logout);

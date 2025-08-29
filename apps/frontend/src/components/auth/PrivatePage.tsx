@@ -2,7 +2,7 @@
 import { useEffect } from 'react';
 import { ReactNode } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import { User } from '@/app/pages/auth/authStore';
+import { User } from '@/app/auth/authStore';
 import { Spinner } from '../ui/spinner';
 import { getLocalizedRoute, Locale } from '@/i18n';
 

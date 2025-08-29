@@ -1,1 +1,1 @@
-export { default } from '@/app/pages/auth/callback/page';
+export { default } from '@/app/_pages/auth/callback/page';
