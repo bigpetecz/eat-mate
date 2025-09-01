@@ -26,21 +26,17 @@ export default async function RootLayout({
   const commonDictionary = await getDictionary(language, 'common');
 
   return (
-    <html lang={language} suppressHydrationWarning>
-      <body className="w-full">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-          <Header commonDictionary={commonDictionary} language={language} />
-          <main className="pt-16 min-h-[calc(100vh-4rem)]">
-            {children}
-            <Analytics />
-          </main>
-          <Toaster />
-          <footer className="border-t px-6 py-4 text-center text-sm text-muted-foreground">
-            © {new Date().getFullYear()} Eat Mate.{' '}
-            {commonDictionary.allRightsReserved}.
-          </footer>
-        </ThemeProvider>
-      </body>
-    </html>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <Header commonDictionary={commonDictionary} language={language} />
+      <main className="pt-16 min-h-[calc(100vh-4rem)]">
+        {children}
+        <Analytics />
+      </main>
+      <Toaster />
+      <footer className="border-t px-6 py-4 text-center text-sm text-muted-foreground">
+        © {new Date().getFullYear()} Eat Mate.{' '}
+        {commonDictionary.allRightsReserved}.
+      </footer>
+    </ThemeProvider>
   );
 }

@@ -14,7 +14,6 @@ export default function Banner({
   dictionary?: Record<string, string>;
 }) {
   const [index, setIndex] = useState(0);
-  console.log(dictionary);
   const { language = 'en' } = useParams();
   const slogans = [
     dictionary?.heroSlogan1,
