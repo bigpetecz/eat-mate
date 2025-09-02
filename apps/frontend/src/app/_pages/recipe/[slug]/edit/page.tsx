@@ -7,12 +7,12 @@ import { recipeDetailDictionary } from '@/dictionaries/recipeDetail';
 export default async function EditRecipePage({
   params,
 }: {
-  params: Promise<{
+  params: {
     language: keyof typeof recipeDetailDictionary;
-  }>;
+  };
 }) {
   const user = await getUser();
-  const { language } = await params;
+  const { language } = params;
 
   const dict = recipeDetailDictionary[language] || recipeDetailDictionary['en'];
 

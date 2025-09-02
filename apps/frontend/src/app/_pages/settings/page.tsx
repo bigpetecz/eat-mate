@@ -6,12 +6,12 @@ import { getDictionary } from '@/dictionaries/dictionaries';
 import { Locale } from '@/i18n';
 
 interface Props {
-  params: Promise<{ language: Locale }>;
+  params: { language: Locale };
 }
 
 const SettingsPage = async ({ params }: Props) => {
   const user = await getUser();
-  const { language } = await params;
+  const { language } = params;
   const dict = await getDictionary(language, 'settings');
   return (
     <PrivatePage user={user}>
