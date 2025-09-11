@@ -5,11 +5,11 @@ import { getDictionary } from '../../../dictionaries/dictionaries';
 import { Locale } from '@/i18n';
 
 interface DiscoverPageProps {
-  params: { language: Locale };
+  params: Promise<{ language: Locale }>;
 }
 
 export default async function DiscoverPage({ params }: DiscoverPageProps) {
-  const locale = params;
+  const locale = await params;
 
   const dictionary = await getDictionary(locale.language, 'discover');
 

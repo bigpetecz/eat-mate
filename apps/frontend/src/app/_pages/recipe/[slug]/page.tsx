@@ -57,13 +57,13 @@ import { recipeDetailDictionary } from '@/dictionaries/recipeDetail';
 export default async function RecipePage({
   params,
 }: {
-  params: {
+  params: Promise<{
     slug: string;
     language: keyof typeof recipeDetailDictionary;
-  };
+  }>;
 }) {
   let recipe: Recipe | null = null;
-  const { slug, language } = params;
+  const { slug, language } = await params;
   const dict = recipeDetailDictionary[language] || recipeDetailDictionary['en'];
   try {
     const res = await apiClient.get(`/recipes/${language}/recipe/${slug}`);
