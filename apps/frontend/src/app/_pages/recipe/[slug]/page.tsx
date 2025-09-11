@@ -208,7 +208,7 @@ export default async function RecipePage({
                 <Nutritions
                   dict={dict}
                   recipe={recipe}
-                  userGender={user.gender}
+                  userGender={user?.gender ?? null}
                 />
                 <div className="mt-6">
                   <h3 className="font-medium mb-2">{dict.specialAttributes}</h3>
