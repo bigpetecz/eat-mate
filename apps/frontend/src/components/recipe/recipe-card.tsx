@@ -70,13 +70,13 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                 <Badge variant="default">{recipe.mealType}</Badge>
               )}
               {/* Show difficulty from ai if present, else from root */}
-              {recipe.ai.difficulty && (
+              {recipe?.ai?.difficulty && (
                 <Badge variant="default">{recipe.ai.difficulty}</Badge>
               )}
               {recipe.country && (
                 <Badge variant="outline">{recipe.country}</Badge>
               )}
-              {recipe.ai.dietLabels?.map((d) => {
+              {recipe.ai?.dietLabels?.map((d) => {
                 const label = dietLabels.find((l) => l.value === d)?.label || d;
                 return (
                   <Badge key={d} variant="secondary">
@@ -84,7 +84,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                   </Badge>
                 );
               })}
-              {recipe.ai.techniques?.map((t) => {
+              {recipe.ai?.techniques?.map((t) => {
                 const label =
                   techniquesOptions.find((l) => l.value === t)?.label || t;
                 return (
@@ -93,7 +93,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                   </Badge>
                 );
               })}
-              {recipe.ai.specialAttributes?.map((s) => {
+              {recipe.ai?.specialAttributes?.map((s) => {
                 const label =
                   specialAttributes.find((l) => l.value === s)?.label || s;
                 return (
@@ -109,14 +109,14 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                 {recipe.prepTime} min + {recipe.cookTime} min
               </span>
               <span className="flex items-center gap-3">
-                {recipe.ai.nutrition.calories != null && (
+                {recipe.ai?.nutrition?.calories != null && (
                   <span className="flex items-center gap-1">
                     <Flame className="w-4 h-4" />
                     {recipe.ai.nutrition.calories} kcal
                   </span>
                 )}
                 {/* Show estimated cost in EUR if present */}
-                {recipe.ai.estimatedCost != null && (
+                {recipe.ai?.estimatedCost != null && (
                   <span className="flex items-center gap-1">
                     <span>€{recipe.ai.estimatedCost}</span>
                   </span>

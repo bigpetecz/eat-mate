@@ -6,11 +6,13 @@ export interface RecipeTranslationRef {
 
 export interface Recipe {
   _id: string;
+  slug: string;
   title: string;
   country?: string;
   createdAt: string;
   images?: string[];
   description?: string;
+  mealType?: string;
   prepTime?: number;
   cookTime?: number;
   servings: number;
