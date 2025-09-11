@@ -1,18 +1,14 @@
 import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { Header } from '../../components/navigation/header';
 import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from 'next-themes';
 import { Locale } from '@/i18n';
 import { getDictionary } from '@/dictionaries/dictionaries';
+import { Header } from '@/components/navigation/header';
 
 export const metadata = {
   title: 'Eat Mate - Your source for delicious recipes',
 };
-
-export async function generateStaticParams() {
-  return [{ language: 'en' }, { langugage: 'cs' }];
-}
 
 export default async function RootLayout({
   children,
