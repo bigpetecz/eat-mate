@@ -6,6 +6,7 @@ export interface User {
   email: string;
   theme: 'auto' | 'light' | 'dark';
   picture?: string;
+  gender?: 'male' | 'female' | null;
 }
 
 interface AuthState {

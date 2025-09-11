@@ -9,5 +9,8 @@
   "save": "Uložit nastavení",
   "success": "Nastavení bylo úspěšně aktualizováno!",
   "error": "Nepodařilo se aktualizovat nastavení. Zkuste to prosím znovu.",
-  "generateName": "Generovat vtipné jméno"
+  "generateName": "Generovat vtipné jméno",
+  "gender": "Pohlaví",
+  "male": "Muž",
+  "female": "Žena"
 }

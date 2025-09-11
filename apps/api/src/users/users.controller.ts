@@ -32,6 +32,10 @@ class UpdateSettingsDto {
   @IsOptional()
   @IsIn(['auto', 'dark', 'light'])
   theme?: 'auto' | 'dark' | 'light';
+
+  @IsOptional()
+  @IsIn(['male', 'female', null])
+  gender?: 'male' | 'female' | null;
 }
 
 class FavoriteRecipeDto {
@@ -72,13 +76,18 @@ export class UsersController {
   async updateSettings(
     @Req() req: Request,
     @Body() dto: UpdateSettingsDto
-  ): Promise<{ displayName: string; theme: string }> {
+  ): Promise<{
+    displayName: string;
+    theme: string;
+    gender: 'male' | 'female' | null;
+  }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
     const userDoc = await this.userModel.findById(user.userId).exec();
     if (!userDoc) throw new NotFoundException('User not found');
     if (dto.displayName !== undefined) userDoc.displayName = dto.displayName;
     if (dto.theme !== undefined) userDoc.theme = dto.theme;
+    if (dto.gender !== undefined) userDoc.gender = dto.gender;
     try {
       await userDoc.save();
     } catch (err: any) {
@@ -88,7 +97,11 @@ export class UsersController {
       }
       throw err;
     }
-    return { displayName: userDoc.displayName, theme: userDoc.theme };
+    return {
+      displayName: userDoc.displayName,
+      theme: userDoc.theme,
+      gender: userDoc.gender,
+    };
   }
   // Generate a unique funny username using OpenAI
   @UseGuards(JwtAuthGuard)

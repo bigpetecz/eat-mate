@@ -9,5 +9,8 @@
   "save": "Save Settings",
   "success": "Settings updated successfully!",
   "error": "Failed to update settings. Please try again.",
-  "generateName": "Generate Funny Name"
+  "generateName": "Generate Funny Name",
+  "gender": "Gender",
+  "male": "Male",
+  "female": "Female"
 }

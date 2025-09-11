@@ -13,46 +13,20 @@ import { RecipeActions } from '@/components/recipe/recipe-actions';
 import { RecipeRating } from '@/components/recipe/recipe-rating';
 import { ServingsIngredients } from '@/components/recipe/servings-ingredients';
 
-interface Recipe {
-  _id: string;
-  title: string;
-  country?: string;
-  createdAt: string;
-  images?: string[];
-  description?: string;
-  prepTime?: number;
-  cookTime?: number;
-  servings: number;
-  ingredients: { name: string; quantity: string }[];
-  instructions?: string[];
-  author: string;
-  averageRating: number;
-  ratingCount: number;
-  ai?: {
-    nutrition?: {
-      calories?: number;
-      protein?: number;
-      fat?: number;
-      carbs?: number;
-      fiber?: number;
-      sugar?: number;
-      sodium?: number;
-    };
-    difficulty?: string;
-    estimatedCost?: number;
-    dietLabels?: string[];
-    keywords?: string[];
-    relatedRecipes?: string[];
-    techniques?: string[];
-    specialAttributes?: string[];
-    winePairing?: string;
-    createdAt?: string;
-    updatedAt?: string;
-    hash?: string;
-  };
-}
+export const DAILY_VALUES = {
+  calories: 2000,
+  protein: 50, // g
+  fat: 70, // g
+  carbs: 275, // g
+  fiber: 28, // g
+  sugar: 50, // g (WHO recommendation, optional)
+  sodium: 2300, // mg
+};
 
 import { recipeDetailDictionary } from '@/dictionaries/recipeDetail';
+import { Nutritions } from '@/components/recipe/nutritions';
+import { Recipe } from '@/types/recipe';
+import { getUser } from '@/app/auth/getUser';
 
 export default async function RecipePage({
   params,
@@ -72,6 +46,9 @@ export default async function RecipePage({
     console.error('Failed to fetch recipe:', error);
     notFound();
   }
+
+  const user = await getUser();
+
   if (!recipe) return notFound();
 
   return (
@@ -228,55 +205,11 @@ export default async function RecipePage({
                 </div>
               </div>
               <div className="w-full md:w-1/2 flex-shrink-0 flex-grow-0">
-                <div>
-                  <h3 className="font-medium mb-2">
-                    {dict.nutritionPerServing}
-                  </h3>
-                  <ul className="list-disc list-inside">
-                    <li>
-                      {dict.calories}:{' '}
-                      {recipe.ai?.nutrition?.calories != null
-                        ? `${recipe.ai.nutrition.calories} kcal`
-                        : '-'}
-                    </li>
-                    <li>
-                      {dict.protein}:{' '}
-                      {recipe.ai?.nutrition?.protein != null
-                        ? `${recipe.ai.nutrition.protein} g`
-                        : '-'}
-                    </li>
-                    <li>
-                      {dict.fat}:{' '}
-                      {recipe.ai?.nutrition?.fat != null
-                        ? `${recipe.ai.nutrition.fat} g`
-                        : '-'}
-                    </li>
-                    <li>
-                      {dict.carbs}:{' '}
-                      {recipe.ai?.nutrition?.carbs != null
-                        ? `${recipe.ai.nutrition.carbs} g`
-                        : '-'}
-                    </li>
-                    <li>
-                      {dict.fiber}:{' '}
-                      {recipe.ai?.nutrition?.fiber != null
-                        ? `${recipe.ai.nutrition.fiber} g`
-                        : '-'}
-                    </li>
-                    <li>
-                      {dict.sugar}:{' '}
-                      {recipe.ai?.nutrition?.sugar != null
-                        ? `${recipe.ai.nutrition.sugar} g`
-                        : '-'}
-                    </li>
-                    <li>
-                      {dict.sodium}:{' '}
-                      {recipe.ai?.nutrition?.sodium != null
-                        ? `${recipe.ai.nutrition.sodium} mg`
-                        : '-'}
-                    </li>
-                  </ul>
-                </div>
+                <Nutritions
+                  dict={dict}
+                  recipe={recipe}
+                  userGender={user.gender}
+                />
                 <div className="mt-6">
                   <h3 className="font-medium mb-2">{dict.specialAttributes}</h3>
                   <div className="flex flex-wrap gap-2">

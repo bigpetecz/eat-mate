@@ -29,6 +29,9 @@ export class User extends Document {
   // Add favorites: array of Recipe ObjectIds
   @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Recipe', default: [] })
   favorites: mongoose.Types.ObjectId[];
+
+  @Prop({ type: String, enum: ['male', 'female', null], default: null })
+  gender: 'male' | 'female' | null;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

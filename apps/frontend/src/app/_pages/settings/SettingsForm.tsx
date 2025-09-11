@@ -25,10 +25,18 @@ import {
 } from '@/components/ui/tooltip';
 import apiClient from '@/app/apiClient';
 import { User } from '../../auth/authStore';
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from '@/components/ui/select';
 
 const settingsSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters'),
   theme: z.enum(['auto', 'light', 'dark']),
+  gender: z.enum(['male', 'female']).nullable(),
 });
 
 type SettingsFormValues = z.infer<typeof settingsSchema>;
@@ -45,6 +53,7 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
     defaultValues: {
       displayName: user.displayName || '',
       theme: user.theme,
+      gender: user.gender ?? null,
     },
   });
   const [saving, setSaving] = useState(false);
@@ -55,6 +64,7 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
       await apiClient.put('users/settings', {
         displayName: values.displayName,
         theme: values.theme,
+        gender: values.gender,
       });
       //   setTheme(values.theme);
     } catch (e: any) {
@@ -163,6 +173,29 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
                   </FormItem>
                 </RadioGroup>
               </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="gender"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>{dict.gender || 'Gender'}</FormLabel>
+              <Select value={field.value ?? ''} onValueChange={field.onChange}>
+                <SelectTrigger className="w-28">
+                  <SelectValue
+                    placeholder={dict.genderPlaceholder || 'Gender'}
+                  />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">{dict.male || 'Male'}</SelectItem>
+                  <SelectItem value="female">
+                    {dict.female || 'Female'}
+                  </SelectItem>
+                </SelectContent>
+              </Select>
               <FormMessage />
             </FormItem>
           )}

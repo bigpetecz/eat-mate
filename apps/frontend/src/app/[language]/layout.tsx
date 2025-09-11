@@ -29,7 +29,7 @@ export default async function RootLayout({
         <Analytics />
       </main>
       <Toaster />
-      <footer className="border-t px-6 py-4 text-center text-sm text-muted-foreground">
+      <footer className="bg-muted border-t px-6 py-4 text-center text-sm text-muted-foreground">
         © {new Date().getFullYear()} Eat Mate.{' '}
         {commonDictionary.allRightsReserved}.
       </footer>

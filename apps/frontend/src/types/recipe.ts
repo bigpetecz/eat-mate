@@ -7,28 +7,38 @@ export interface RecipeTranslationRef {
 export interface Recipe {
   _id: string;
   title: string;
-  slug: string;
-  language: string;
-  translations?: RecipeTranslationRef[];
   country?: string;
   createdAt: string;
   images?: string[];
   description?: string;
   prepTime?: number;
   cookTime?: number;
-  servings?: number;
-  ingredients?: { name: string; quantity: string }[];
+  servings: number;
+  ingredients: { name: string; quantity: string }[];
   instructions?: string[];
   author: string;
-  mealType?: string;
-  ai: {
-    nutrition: {
+  averageRating: number;
+  ratingCount: number;
+  ai?: {
+    nutrition?: {
       calories?: number;
+      protein?: number;
+      fat?: number;
+      carbs?: number;
+      fiber?: number;
+      sugar?: number;
+      sodium?: number;
     };
     difficulty?: string;
-    techniques?: string[];
-    dietLabels?: string[];
-    specialAttributes?: string[];
     estimatedCost?: number;
+    dietLabels?: string[];
+    keywords?: string[];
+    relatedRecipes?: string[];
+    techniques?: string[];
+    specialAttributes?: string[];
+    winePairing?: string;
+    createdAt?: string;
+    updatedAt?: string;
+    hash?: string;
   };
 }

@@ -31,6 +31,9 @@ export const recipeDetailDictionary = {
     shareRecipe: 'Share recipe - copy link',
     linkCopied: 'Link copied!',
     edit: 'Edit',
+    dayValue: 'of daily value',
+    male: 'Male',
+    female: 'Female',
   },
   cs: {
     ingredients: 'Ingredience',
@@ -42,7 +45,7 @@ export const recipeDetailDictionary = {
     mealType: 'Typ jídla',
     noImage: 'Bez obrázku',
     additionalInfo: 'Další informace',
-    difficultyCostWine: 'Obtížnost, cena & párování s vínem',
+    difficultyCostWine: 'Obtížnost, cena a párování s vínem',
     difficulty: 'Obtížnost',
     estimatedCost: 'Odhadovaná cena',
     perServing: 'za porci',
@@ -63,5 +66,8 @@ export const recipeDetailDictionary = {
     shareRecipe: 'Sdílet recept - zkopírovat odkaz',
     linkCopied: 'Odkaz zkopírován!',
     edit: 'Upravit',
+    dayValue: 'z denní dávky',
+    male: 'Muž',
+    female: 'Žena',
   },
 };
