@@ -1,0 +1,23 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "type": "nx",
+      "project": "",
+      "command": "run",
+      "positional": "@eat-mate/frontend:dev",
+      "flags": [],
+      "problemMatcher": [],
+      "label": "nx: nx run @eat-mate/frontend:dev"
+    },
+    {
+      "type": "nx",
+      "project": "",
+      "command": "run",
+      "positional": "@eat-mate/api:serve",
+      "flags": [],
+      "problemMatcher": [],
+      "label": "nx: nx run @eat-mate/api:serve"
+    }
+  ]
+}

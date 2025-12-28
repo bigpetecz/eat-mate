@@ -1,26 +1,31 @@
 'use client';
 
-import apiClient from '@/app/apiClient';
+import { apiClient } from '@/app/api-client';
 import { User } from '@/app/auth/authStore';
 import { RecipeFormValues } from '@/components/recipe/recipe-form';
 import RecipeForm from '@/components/recipe/recipe-form';
 import { Spinner } from '@/components/ui/spinner';
+import { getLocalizedRoute, Locale } from '@/i18n';
+import { Recipe } from '@/types/recipe';
 import { notFound, useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
 interface EditRecipeFormProps {
-  user: User;
+  language: Locale;
+  user: User | null;
   dict: Record<string, string>;
 }
 
-const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
-  const { id: recipeId } = useParams();
+const EditRecipeForm: React.FC<EditRecipeFormProps> = ({
+  user,
+  dict,
+  language,
+}) => {
+  const { slug } = useParams();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [recipe, setRecipe] = useState<
-    (RecipeFormValues & { images?: string[] }) | null
-  >(null);
+  const [recipe, setRecipe] = useState<Recipe | null>(null);
   const [files, setFiles] = useState<File[]>([]);
   // Track removed image URLs
   const [removedImages, setRemovedImages] = useState<string[]>([]);
@@ -31,7 +36,7 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
   useEffect(() => {
     const fetchRecipe = async () => {
       try {
-        const res = await apiClient.get(`/recipes/${recipeId}`);
+        const res = await apiClient.get(`/recipes/${language}/recipe/${slug}`);
         const recipeData = res.data;
         // Fetch each image as a File
         const fetchedFiles = await Promise.all(
@@ -52,7 +57,7 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
       }
     };
     fetchRecipe();
-  }, [recipeId]);
+  }, [slug]);
 
   // Helper: map file name to image URL for originals
   const fileNameToUrl = (name: string) => {
@@ -70,15 +75,19 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
 
   const onSubmit = async (data: RecipeFormValues, newFiles: File[]) => {
     try {
+      if (!user) {
+        toast.error('User not authenticated');
+        return;
+      }
       // 1. Update recipe (without images)
-      const response = await apiClient.put(`/recipes/${recipeId}`, {
+      const response = await apiClient.put(`/recipes/${recipe?._id}`, {
         ...data,
         author: user._id,
         images: [],
       });
       // 2. Delete removed images
       for (const url of removedImages) {
-        await apiClient.delete(`/recipes/${recipeId}/images`, {
+        await apiClient.delete(`/recipes/${recipe?._id}/images`, {
           data: { url },
         });
       }
@@ -89,12 +98,14 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
       if (newUploads.length > 0) {
         const formData = new FormData();
         newUploads.forEach((file) => formData.append('files', file));
-        await apiClient.post(`/recipes/${recipeId}/images`, formData, {
+        await apiClient.post(`/recipes/${recipe?._id}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
       toast('Recipe updated!');
-      router.push(`/recipe/${response.data._id}`);
+      router.push(
+        getLocalizedRoute('recipeDetail', language, response.data.slug)
+      );
     } catch (error) {
       toast.error('Failed to update recipe.');
       console.error(error);
@@ -112,16 +123,19 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({ user, dict }) => {
   return (
     <RecipeForm
       dict={dict}
+      onCancel={() =>
+        router.push(getLocalizedRoute('recipeDetail', language, recipe.slug))
+      }
       onSubmit={onSubmit}
       defaultValues={{
         title: recipe.title,
-        description: recipe.description,
-        country: recipe.country,
-        prepTime: recipe.prepTime,
-        cookTime: recipe.cookTime,
-        servings: recipe.servings,
-        ingredients: recipe.ingredients,
-        instructions: recipe.instructions,
+        description: recipe.description ?? '',
+        country: recipe.country ?? '',
+        prepTime: recipe.prepTime ?? 0,
+        cookTime: recipe.cookTime ?? 0,
+        servings: recipe.servings ?? 0,
+        ingredients: recipe.ingredients ?? [],
+        instructions: recipe.instructions ?? [],
       }}
       defaultFiles={files}
       onRemoveImage={handleRemoveImage}

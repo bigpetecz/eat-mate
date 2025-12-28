@@ -1,6 +1,6 @@
 {
   "title": "Název",
-  "country": "Země",
+  "country": "Země původu receptu",
   "description": "Popis",
   "descriptionPlaceholder": "Krátký popis",
   "prepTime": "Doba přípravy (min)",
@@ -19,9 +19,13 @@
   "addStep": "Přidat krok",
   "images": "Obrázky",
   "imagesDescription": "Nahrajte 2 skvělé fotografie vašeho hotového receptu. Dobré fotografie dělají recept atraktivnější a pomáhají ostatním ho vyzkoušet!",
-  "dragDrop": "Přetáhněte soubory sem",
-  "browseFiles": "Vybrat soubory",
-  "orClickToBrowse": "Nebo klikněte pro výběr (max 2 soubory, do 5MB každý)",
-  "saveRecipe": "Uložit recept",
-  "createRecipe": "Vytvořit recept"
+  "dragDrop": "Přetáhněte fotky sem",
+  "browseFiles": "Vybrat fotky",
+  "orClickToBrowse": "Nebo klikněte pro výběr (max 2 fotky, do 5MB každá)",
+  "saveRecipe": "Uložit",
+  "createRecipe": "Vytvořit",
+  "createFirstRecipe": "Vytvořit první recept",
+  "loading": "Načítání...",
+  "noIngredientsFound": "Nebyly nalezeny žádné ingredience.",
+  "cancel": "Zrušit"
 }

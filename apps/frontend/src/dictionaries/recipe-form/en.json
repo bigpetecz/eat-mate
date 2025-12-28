@@ -1,6 +1,6 @@
 {
   "title": "Title",
-  "country": "Country",
+  "country": "Country of Origin",
   "description": "Description",
   "descriptionPlaceholder": "Short description",
   "prepTime": "Prep Time (min)",
@@ -19,9 +19,13 @@
   "addStep": "Add Step",
   "images": "Images",
   "imagesDescription": "Upload 2 great photos of your finished recipe. Good photos make your recipe more appealing and help others try it!",
-  "dragDrop": "Drag & drop files here",
-  "browseFiles": "Browse files",
-  "orClickToBrowse": "Or click to browse (max 2 files, up to 5MB each)",
-  "saveRecipe": "Save recipe",
-  "createRecipe": "Create Recipe"
+  "dragDrop": "Drag & drop photo here",
+  "browseFiles": "Browse photos",
+  "orClickToBrowse": "Or click to browse (max 2 photos, up to 5MB each)",
+  "saveRecipe": "Save",
+  "createRecipe": "Create",
+  "createFirstRecipe": "Create your first recipe",
+  "loading": "Loading...",
+  "noIngredientsFound": "No ingredients found",
+  "cancel": "Cancel"
 }

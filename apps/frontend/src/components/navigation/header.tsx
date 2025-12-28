@@ -2,7 +2,6 @@ import Link from 'next/link';
 import { Logo } from '@/components/brand/logo';
 import { Navigation } from '@/components/navigation/navigation';
 import { UserMenu } from '@/components/navigation/user-menu';
-import { getUser } from '../../app/auth/getUser';
 import { MobileMenu } from './mobile-menu';
 import { LanguageSwitcher } from '@/components/language-switcher';
 import { getLocalizedRoute, Locale } from '@/i18n';
@@ -13,8 +12,6 @@ interface HeaderProps {
 }
 
 export async function Header({ language, commonDictionary }: HeaderProps) {
-  const user = await getUser();
-
   return (
     <header className="site-header fixed top-0 flex justify-between items-center px-4 md:px-6 h-16 border-b z-30 bg-background/80 backdrop-blur shadow-sm w-full">
       {/* Logo: show smaller or alternate logo on mobile */}
@@ -35,12 +32,12 @@ export async function Header({ language, commonDictionary }: HeaderProps) {
         <Navigation commonDictionary={commonDictionary} />
         <div className="ml-auto flex-row items-center hidden md:flex">
           <LanguageSwitcher />
-          <UserMenu commonDictionary={commonDictionary} user={user} />
+          <UserMenu commonDictionary={commonDictionary} />
         </div>
       </div>
       {/* Mobile hamburger menu */}
       <div className="md:hidden flex items-center">
-        <MobileMenu user={user} />
+        <MobileMenu />
       </div>
     </header>
   );

@@ -1,10 +1,10 @@
 'use client';
 import { useEffect, useState } from 'react';
 import { RecipeCard } from '@/components/recipe/recipe-card';
-import apiClient from '../../apiClient';
 import { Spinner } from '@/components/ui/spinner';
 import { useParams } from 'next/navigation';
 import { getDictionary } from '@/dictionaries/dictionaries';
+import { apiClient } from '@/app/api-client';
 
 export default function FavoritesPage() {
   const [recipes, setRecipes] = useState<any[]>([]);

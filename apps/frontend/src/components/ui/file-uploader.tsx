@@ -1032,6 +1032,8 @@ const FileUploadItemPreview = React.forwardRef<
       if (isImage) {
         return (
           <Image
+            width={300}
+            height={128}
             src={URL.createObjectURL(file)}
             alt={file.name}
             className="size-full rounded object-cover"

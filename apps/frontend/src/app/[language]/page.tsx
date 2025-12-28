@@ -4,7 +4,6 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { SearchIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
-import apiClient from '../apiClient';
 import { Spinner } from '@/components/ui/spinner';
 import { RecipeCard } from '@/components/recipe/recipe-card';
 import { useForm } from 'react-hook-form';
@@ -13,6 +12,7 @@ import Banner from '@/components/banner';
 import Link from 'next/link';
 import { getLocalizedRoute, Locale } from '@/i18n';
 import { getDictionary } from '@/dictionaries/dictionaries';
+import { apiClient } from '../api-client';
 
 export default function HomePage() {
   const [recipes, setRecipes] = useState<any[]>([]); // TODO: Replace any with Recipe type

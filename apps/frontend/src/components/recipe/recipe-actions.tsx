@@ -1,22 +1,20 @@
 'use client';
 import { Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { FC, useEffect, useState } from 'react';
 import {
   Tooltip,
   TooltipTrigger,
   TooltipContent,
 } from '@/components/ui/tooltip';
-import apiClient from '../../app/apiClient';
-
-export function RecipeActions({
-  authorId,
-  recipeId,
-  actionsDict,
-}: {
+import { User } from '@/app/auth/authStore';
+import { getLocalizedRoute, Locale } from '@/i18n';
+import { Recipe } from '@/types/recipe';
+import Link from 'next/link';
+import { apiClient } from '@/app/api-client';
+interface RecipeActionsProps {
   authorId: string;
-  recipeId: string;
+  recipe: Recipe;
   actionsDict: {
     addToFavorites: string;
     removeFromFavorites: string;
@@ -24,30 +22,27 @@ export function RecipeActions({
     linkCopied: string;
     edit: string;
   };
-}) {
+  language: string;
+  user: User | null;
+}
+
+export const RecipeActions: FC<RecipeActionsProps> = ({
+  authorId,
+  recipe,
+  actionsDict,
+  language,
+  user,
+}) => {
   const [copied, setCopied] = useState(false);
   const [isAuthor, setIsAuthor] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
-  const router = useRouter();
 
-  useEffect(() => {
-    async function fetchMe() {
-      try {
-        const res = await apiClient.get('/auth/me');
-        const user = res.data;
-        setIsAuthor(user?._id === authorId);
-      } catch {
-        setIsAuthor(false);
-      }
-    }
-    fetchMe();
-  }, [authorId]);
-
+  const recipeId = recipe._id;
   useEffect(() => {
     async function fetchFavorite() {
       try {
-        const res = await apiClient.get('/users/favorites');
+        const res = await apiClient.get(`/users/${language}/favorites`);
         setIsFavorite(res.data.favorites.includes(recipeId));
       } catch {
         setIsFavorite(false);
@@ -55,6 +50,14 @@ export function RecipeActions({
     }
     fetchFavorite();
   }, [recipeId]);
+
+  useEffect(() => {
+    if (user && authorId) {
+      setIsAuthor(user?._id === authorId);
+    } else {
+      setIsAuthor(false);
+    }
+  }, [user, authorId]);
 
   const handleToggleFavorite = async () => {
     setLoadingFavorite(true);
@@ -121,14 +124,18 @@ export function RecipeActions({
         <TooltipContent side="top">{actionsDict.linkCopied}</TooltipContent>
       </Tooltip>
       {isAuthor && (
-        <Button
-          className="cursor-pointer ml-2"
-          variant="default"
-          onClick={() => router.push(`/recipe/edit/${recipeId}`)}
+        <Link
+          href={getLocalizedRoute(
+            'recipeEdit',
+            language as Locale,
+            recipe.slug
+          )}
         >
-          {actionsDict.edit}
-        </Button>
+          <Button className="cursor-pointer ml-2" variant="default">
+            {actionsDict.edit}
+          </Button>
+        </Link>
       )}
     </div>
   );
-}
+};

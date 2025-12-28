@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './user.schema';
 import { UsersController } from './users.controller';
-import { Recipe, RecipeSchema } from '../recipes/recipe.schema';
+import { Recipe, RecipeSchema } from '../recipes/schema/recipe.schema';
 import { OpenAIModule } from '../openai/openai.module';
 
 @Module({

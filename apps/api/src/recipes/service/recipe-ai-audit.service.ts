@@ -2,8 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { Model } from 'mongoose';
-import { Recipe } from './recipe.schema';
-import { OpenAIService } from '../openai/openai.service';
+import { Recipe } from '../schema/recipe.schema';
+import { OpenAIService } from '../../openai/openai.service';
 import crypto from 'crypto';
 
 @Injectable()
@@ -83,6 +83,9 @@ export class RecipeAiAuditService {
           update['ai.difficulty'] = (aiFields as any).difficulty;
         if ('estimatedCost' in aiFields)
           update['ai.estimatedCost'] = (aiFields as any).estimatedCost;
+        if ('flavour' in aiFields && aiFields.flavour) {
+          update['ai.flavour'] = aiFields.flavour;
+        }
         update['ai.hash'] = hash;
         const updateResult = await this.recipeModel.updateOne(
           { _id: recipe._id },

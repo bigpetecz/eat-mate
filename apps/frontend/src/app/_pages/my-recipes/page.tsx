@@ -1,10 +1,14 @@
 'use client';
 import { RecipeCard } from '@/components/recipe/recipe-card';
-import apiClient from '../../apiClient';
 import { Spinner } from '@/components/ui/spinner';
+import { PlusIcon } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { getDictionary } from '@/dictionaries/dictionaries';
+import { Button } from '@/components/ui/button';
+import Link from 'next/link';
+import { getLocalizedRoute, Locale } from '@/i18n';
+import { apiClient } from '@/app/api-client';
 
 export default function MyRecipesPage() {
   const [recipes, setRecipes] = useState<any[]>([]);
@@ -50,9 +54,18 @@ export default function MyRecipesPage() {
             <h1 className="text-3xl font-bold mb-2">
               {dict.title || 'Your Recipes'}
             </h1>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-6">
               {dict.noRecipes || 'You have not created any recipes yet.'}
             </p>
+            <Link href={getLocalizedRoute('recipeCreate', language as Locale)}>
+              <Button
+                size="lg"
+                className="mt-2 px-8 py-4 text-lg rounded-full bg-primary text-primary-foreground font-semibold shadow-lg hover:bg-primary/90 transition flex items-center gap-2"
+              >
+                <PlusIcon className="w-6 h-6" />
+                {dict.createFirstRecipe || 'Create your first recipe'}
+              </Button>
+            </Link>
           </div>
         </div>
       </div>

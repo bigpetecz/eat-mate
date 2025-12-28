@@ -1,16 +1,17 @@
 import { Card } from '@/components/ui/card';
 import { SettingsForm } from './SettingsForm';
 import PrivatePage from '@/components/auth/PrivatePage';
-import { getUser } from '../../auth/getUser';
 import { getDictionary } from '@/dictionaries/dictionaries';
 import { Locale } from '@/i18n';
+import { getAuthenticatedUser } from '@/lib/server-api';
+import { User } from '@/app/auth/authStore';
 
 interface Props {
   params: Promise<{ language: Locale }>;
 }
 
 const SettingsPage = async ({ params }: Props) => {
-  const user = await getUser();
+  const user = (await getAuthenticatedUser()) as User | null;
   const { language } = await params;
   const dict = await getDictionary(language, 'settings');
   return (

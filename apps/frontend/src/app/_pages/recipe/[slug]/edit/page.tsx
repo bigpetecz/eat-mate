@@ -1,8 +1,10 @@
 import EditRecipeForm from './edit-recipe.form';
 import PrivatePage from '@/components/auth/PrivatePage';
-import { getUser } from '@/app/auth/getUser';
 import { Card } from '@/components/ui/card';
 import { recipeDetailDictionary } from '@/dictionaries/recipeDetail';
+import { getDictionary } from '@/dictionaries/dictionaries';
+import { getAuthenticatedUser } from '@/lib/server-api';
+import { User } from '@/app/auth/authStore';
 
 export default async function EditRecipePage({
   params,
@@ -11,10 +13,10 @@ export default async function EditRecipePage({
     language: keyof typeof recipeDetailDictionary;
   }>;
 }) {
-  const user = await getUser();
+  const user = (await getAuthenticatedUser()) as User | null;
   const { language } = await params;
 
-  const dict = recipeDetailDictionary[language] || recipeDetailDictionary['en'];
+  const formDict = await getDictionary(language, 'recipe-form');
 
   return (
     <PrivatePage user={user}>
@@ -26,7 +28,7 @@ export default async function EditRecipePage({
             information you provide, the easier it will be for others to follow,
             enjoy, and appreciate your creation.
           </p>
-          <EditRecipeForm dict={dict} user={user} />
+          <EditRecipeForm language={language} dict={formDict} user={user} />
         </Card>
       </div>
     </PrivatePage>

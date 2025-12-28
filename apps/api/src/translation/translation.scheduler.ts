@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Recipe } from '../recipes/recipe.schema';
+import { Recipe } from '../recipes/schema/recipe.schema';
 import { GoogleTranslateService } from './google-translate.service';
 import slugify from 'slugify';
 import * as mongoose from 'mongoose';

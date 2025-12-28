@@ -18,22 +18,30 @@ import {
   PencilIcon,
   SettingsIcon,
 } from 'lucide-react';
-import { FC, useEffect } from 'react';
+import { FC, useEffect, useState } from 'react';
 import { useTheme } from 'next-themes';
 import { useParams } from 'next/navigation';
 import { getLocalizedRoute, Locale } from '@/i18n';
+import { apiClient } from '@/app/api-client';
 
 interface UserProps {
-  user: User;
   commonDictionary: Record<string, string>;
 }
 
-export const UserMenu: FC<UserProps> = ({ user, commonDictionary }) => {
+export const UserMenu: FC<UserProps> = ({ commonDictionary }) => {
   const { setTheme } = useTheme();
   const params = useParams();
   const language = (
     typeof params?.language === 'string' ? params.language : 'en'
   ) as Locale;
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    apiClient
+      .get<User>('/auth/me')
+      .then((res) => setUser(res.data))
+      .catch(() => setUser(null));
+  }, []);
 
   useEffect(() => {
     setTheme((user?.theme === 'auto' ? 'system' : user?.theme) || 'system');

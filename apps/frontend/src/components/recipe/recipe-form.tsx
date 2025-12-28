@@ -1,4 +1,5 @@
 'use client';
+import { useEffect } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -13,12 +14,14 @@ import {
   FormMessage,
 } from '@/components/form/form';
 import { Input } from '@/components/ui/input';
+import { IngredientAutocomplete } from '@/components/ui/ingredient-autocomplete';
+import { UnitAutocomplete } from '@/components/ui/unit-autocomplete';
+
 import { Textarea } from '@/components/ui/textarea';
 import { Combobox } from '@/components/ui/combobox';
-import { FC, useCallback } from 'react';
+import { FC, useCallback, useState, useRef } from 'react';
 
 import { toast } from 'sonner';
-import { useState } from 'react';
 import {
   FileUpload,
   FileUploadDropzone,
@@ -29,40 +32,51 @@ import {
   FileUploadItemMetadata,
   FileUploadItemDelete,
 } from '@/components/ui/file-uploader';
-import { Upload, X } from 'lucide-react';
+import { PlusIcon, Upload, X } from 'lucide-react';
+import { StepsEditor } from '@/components/steps-editor/steps-editor';
+import { countries } from './countries';
+import { Separator } from '../ui/separator';
 
 export interface RecipeFormProps {
   defaultValues: RecipeFormValues;
   onSubmit: (data: RecipeFormValues, files: File[]) => Promise<void>;
   defaultFiles?: File[];
   onRemoveImage?: (url: string) => void;
+  onCancel?: () => void;
   dict: Record<string, string>;
 }
-
-// Move RecipeFormValues type export to RecipeForm.tsx if not already exported
-// If not exported, define locally for now
-export type RecipeFormValues = {
-  title: string;
-  description: string;
-  country?: string;
-  prepTime: number;
-  cookTime: number;
-  servings: number;
-  ingredients: { name: string; quantity: string }[];
-  instructions: string[];
-};
 
 export type Ingredient = {
   name: string;
   quantity: string;
+  unit?: string;
+  ingredientId?: string;
+  unitId?: string; // store selected unit's id
 };
+
+export type RecipeFormValues = {
+  title: string;
+  description: string;
+  country: string;
+  prepTime: number;
+  cookTime: number;
+  servings: number;
+  ingredients: Ingredient[];
+  instructions: string[];
+};
+
+function getFlagEmoji(countryCode: string) {
+  return countryCode
+    .toUpperCase()
+    .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
+}
 
 const formSchema = z.object({
   title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
   description: z
     .string()
     .min(10, { message: 'Description must be at least 10 characters.' }),
-  country: z.string().optional(),
+  country: z.string().min(1, { message: 'Country is required.' }),
   prepTime: z.coerce
     .number()
     .min(0, { message: 'Prep time must be 0 or more.' })
@@ -80,6 +94,9 @@ const formSchema = z.object({
       z.object({
         name: z.string().min(1, { message: 'Ingredient name required.' }),
         quantity: z.string().min(1, { message: 'Quantity required.' }),
+        ingredientId: z.string().optional(),
+        unit: z.string().optional(),
+        unitId: z.string().optional(), // unit id if selected
       })
     )
     .min(1, { message: 'At least one ingredient is required.' }),
@@ -92,43 +109,27 @@ const formSchema = z.object({
     .min(1, { message: 'At least one instruction is required.' }),
 });
 
-// List of countries with codes for flags
-const countries = [
-  { code: 'CZ', name: 'Czech Republic' },
-  { code: 'US', name: 'United States' },
-  { code: 'IT', name: 'Italy' },
-  { code: 'FR', name: 'France' },
-  { code: 'IN', name: 'India' },
-  { code: 'JP', name: 'Japan' },
-  { code: 'GB', name: 'United Kingdom' },
-  { code: 'DE', name: 'Germany' },
-  { code: 'ES', name: 'Spain' },
-  { code: 'CN', name: 'China' },
-  { code: 'BR', name: 'Brazil' },
-  { code: 'RU', name: 'Russia' },
-  { code: 'CA', name: 'Canada' },
-  { code: 'AU', name: 'Australia' },
-  { code: 'MX', name: 'Mexico' },
-  { code: 'KR', name: 'South Korea' },
-  { code: 'TR', name: 'Turkey' },
-  { code: 'AR', name: 'Argentina' },
-  { code: 'ZA', name: 'South Africa' },
-  { code: 'EG', name: 'Egypt' },
-  // ...add all other countries as needed
-];
-
 const RecipeForm: FC<RecipeFormProps> = ({
   defaultValues,
   onSubmit,
   defaultFiles,
   onRemoveImage,
+  onCancel,
   dict = {},
 }) => {
+  // Scroll to top on mount with smooth transition
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  // Refs for focusing ingredient inputs
+  const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
   const form = useForm<RecipeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
   const [files, setFiles] = useState<File[]>(defaultFiles || []);
+  const [removingIdx, setRemovingIdx] = useState<number | null>(null);
   const onFileReject = (file: File, message: string) => {
     // You can show a toast or error message here
     toast.error(`${file.name}: ${message}`);
@@ -145,26 +146,33 @@ const RecipeForm: FC<RecipeFormProps> = ({
     <Form {...form}>
       <form
         onSubmit={form.handleSubmit(onFormSubmit)}
-        className="space-y-8 mx-auto w-full max-w-2xl"
+        className="space-y-8 mx-auto w-full"
         encType="multipart/form-data"
       >
-        <div className="flex flex-col md:flex-row gap-4 w-full">
+        <div className="flex flex-row gap-4 w-full items-end">
           <div className="flex-1 min-w-0">
             <FormField
               control={form.control}
               name="title"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{dict.title}</FormLabel>
+                  <FormLabel id="recipe-title-label">{dict.title}</FormLabel>
                   <FormControl>
-                    <Input placeholder={dict.title} {...field} />
+                    <Input
+                      placeholder={dict.title}
+                      aria-label={dict.title}
+                      aria-labelledby="recipe-title-label"
+                      aria-required="true"
+                      autoFocus
+                      {...field}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
           </div>
-          <div className="flex-1 min-w-0">
+          <div className="min-w-[180px] max-w-xs">
             <FormField
               control={form.control}
               name="country"
@@ -176,9 +184,11 @@ const RecipeForm: FC<RecipeFormProps> = ({
                       options={countries.map((country) => ({
                         value: country.name,
                         label: country.name,
+                        icon: getFlagEmoji(country.code),
                       }))}
                       value={field.value}
                       onChange={field.onChange}
+                      triggerClassName="hover:bg-white"
                     />
                   </FormControl>
                   <FormMessage />
@@ -253,48 +263,115 @@ const RecipeForm: FC<RecipeFormProps> = ({
               <FormLabel>{dict.ingredients}</FormLabel>
               <FormDescription>{dict.ingredientsDescription}</FormDescription>
               <div className="space-y-2">
-                {field.value.map((ing: Ingredient, idx: number) => (
-                  <div key={idx} className="flex gap-2">
-                    <Input
-                      placeholder={dict.ingredientNamePlaceholder}
-                      value={ing.name}
-                      onChange={(e) => {
-                        const newArr = [...field.value];
-                        newArr[idx].name = e.target.value;
-                        field.onChange(newArr);
-                      }}
-                    />
-                    <Input
-                      placeholder={dict.ingredientQuantityPlaceholder}
-                      value={ing.quantity}
-                      onChange={(e) => {
-                        const newArr = [...field.value];
-                        newArr[idx].quantity = e.target.value;
-                        field.onChange(newArr);
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      onClick={() => {
-                        const newArr = field.value.filter(
-                          (_: Ingredient, i: number) => i !== idx
-                        );
-                        field.onChange(newArr);
-                      }}
+                {field.value.map(
+                  (ing: Ingredient & { image?: string }, idx: number) => (
+                    <div
+                      key={idx}
+                      className={`flex gap-2 items-center transition-all duration-300 ${
+                        removingIdx === idx
+                          ? 'opacity-0 -translate-x-8 pointer-events-none'
+                          : 'opacity-100 translate-x-0'
+                      }`}
                     >
-                      {dict.removeIngredient}
-                    </Button>
-                  </div>
-                ))}
+                      <IngredientAutocomplete
+                        loadingLabel={dict.loading}
+                        noIngredientsFoundLabel={dict.noIngredientsFound}
+                        value={ing.name}
+                        onChange={(val) => {
+                          const newArr = [...field.value];
+                          newArr[idx].name = val;
+                          delete newArr[idx].ingredientId; // clear id when user types new name
+                          field.onChange(newArr);
+                        }}
+                        onSelect={(option) => {
+                          const newArr = [...field.value];
+                          newArr[idx].ingredientId = option.id; // store id when selected
+                          newArr[idx].name = option.name;
+                          field.onChange(newArr);
+                        }}
+                        placeholder={dict.ingredientNamePlaceholder}
+                        inputRef={(el: HTMLInputElement | null) => {
+                          inputRefs.current[idx] = el;
+                        }}
+                      />
+                      <UnitAutocomplete
+                        value={
+                          ing.quantity && ing.unit
+                            ? `${ing.quantity} ${ing.unit}`
+                            : ing.unit || ''
+                        }
+                        onChange={(val, parsedValues) => {
+                          const newArr = [...field.value];
+
+                          if (parsedValues) {
+                            // Update both quantity and unit if parsing is available
+                            if (parsedValues.quantity) {
+                              newArr[idx].quantity = parsedValues.quantity;
+                            }
+                            newArr[idx].unit = parsedValues.unit || val;
+                            // clear unitId when user freeforms
+                            delete newArr[idx].unitId;
+                          } else {
+                            // Fallback to just updating unit
+                            newArr[idx].unit = val;
+                          }
+
+                          field.onChange(newArr);
+                        }}
+                        onSelect={(option) => {
+                          const newArr = [...field.value];
+                          newArr[idx].unitId = option.id; // store selected unit id
+                          newArr[idx].unit = option.name;
+                          field.onChange(newArr);
+                        }}
+                        placeholder={dict.unitPlaceholder || 'Unit'}
+                        loadingLabel={dict.loading || 'Loading…'}
+                        noUnitsFoundLabel={
+                          dict.noUnitsFound || 'No units found.'
+                        }
+                      />
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="icon"
+                        aria-label={dict.removeIngredient}
+                        onClick={() => {
+                          setRemovingIdx(idx);
+                          setTimeout(() => {
+                            const newArr = field.value.filter(
+                              (_: Ingredient, i: number) => i !== idx
+                            );
+                            field.onChange(newArr);
+                            setRemovingIdx(null);
+                          }, 300); // match duration-300
+                        }}
+                        className="cursor-pointer"
+                      >
+                        <X className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  )
+                )}
                 <Button
                   type="button"
-                  variant="outline"
-                  onClick={() =>
-                    field.onChange([...field.value, { name: '', quantity: '' }])
-                  }
+                  variant="secondary"
+                  className="cursor-pointer mt-2"
+                  onClick={() => {
+                    field.onChange([
+                      ...field.value,
+                      { name: '', quantity: '', unit: '' },
+                    ]);
+                    setTimeout(() => {
+                      // Focus the last input after render using refs
+                      if (inputRefs.current && inputRefs.current.length > 0) {
+                        const last =
+                          inputRefs.current[inputRefs.current.length - 1];
+                        if (last) last.focus();
+                      }
+                    }, 0);
+                  }}
                 >
-                  {dict.addIngredient}
+                  <PlusIcon className="w-6 h-6" /> {dict.addIngredient}
                 </Button>
               </div>
               <FormMessage />
@@ -309,42 +386,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
             <FormItem>
               <FormLabel>{dict.instructions}</FormLabel>
               <FormDescription>{dict.instructionsDescription}</FormDescription>
-              <div className="space-y-2">
-                {field.value.map((step: string, idx: number) => (
-                  <div key={idx} className="flex gap-2">
-                    <Input
-                      placeholder={`${dict.stepPlaceholder} ${idx + 1}`}
-                      value={step}
-                      onChange={(e) => {
-                        const newArr = [...field.value];
-                        newArr[idx] = e.target.value;
-                        field.onChange(newArr);
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      className="cursor-pointer"
-                      onClick={() => {
-                        const newArr = field.value.filter(
-                          (_: string, i: number) => i !== idx
-                        );
-                        field.onChange(newArr);
-                      }}
-                    >
-                      {dict.removeStep}
-                    </Button>
-                  </div>
-                ))}
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="cursor-pointer"
-                  onClick={() => field.onChange([...field.value, ''])}
-                >
-                  {dict.addStep}
-                </Button>
-              </div>
+              <StepsEditor value={field.value} onChange={field.onChange} />
               <FormMessage />
             </FormItem>
           )}
@@ -408,9 +450,22 @@ const RecipeForm: FC<RecipeFormProps> = ({
             </FileUploadList>
           </FileUpload>
         </FormItem>
-        <Button className="cursor-pointer" type="submit">
-          {defaultValues.title !== '' ? dict.saveRecipe : dict.createRecipe}
-        </Button>
+        <Separator />
+        <div className="flex justify-end gap-2 mt-6">
+          {typeof onCancel === 'function' && (
+            <Button
+              size="lg"
+              type="button"
+              variant="outline"
+              onClick={onCancel}
+            >
+              {dict.cancel || 'Cancel'}
+            </Button>
+          )}
+          <Button size="lg" className="cursor-pointer" type="submit">
+            {defaultValues.title !== '' ? dict.saveRecipe : dict.createRecipe}
+          </Button>
+        </div>
       </form>
     </Form>
   );

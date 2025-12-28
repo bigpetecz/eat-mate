@@ -16,7 +16,7 @@ export interface Recipe {
   prepTime?: number;
   cookTime?: number;
   servings: number;
-  ingredients: { name: string; quantity: string }[];
+  ingredients: { name: string; quantity: string; unit: string }[];
   instructions?: string[];
   author: string;
   averageRating: number;

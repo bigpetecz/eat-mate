@@ -2,7 +2,8 @@
 import { useEffect, useState } from 'react';
 import { Rating, RatingButton } from '@/components/ui/rating';
 import { StarIcon } from 'lucide-react';
-import apiClient from '../../app/apiClient';
+import { User } from '@/app/auth/authStore';
+import { apiClient } from '@/app/api-client';
 
 export function RecipeRating({
   recipeId,
@@ -38,9 +39,8 @@ export function RecipeRating({
   useEffect(() => {
     async function fetchMe() {
       try {
-        const res = await apiClient.get('/auth/me');
-        const user = res.data;
-        setDisplayRating(user._id !== authorId);
+        const res = await apiClient.get<User>('/auth/me');
+        setDisplayRating(res.data._id !== authorId);
       } catch {
         setDisplayRating(false);
       }

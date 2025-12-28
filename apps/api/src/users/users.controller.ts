@@ -14,7 +14,7 @@ import {
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types, isValidObjectId } from 'mongoose';
-import { Recipe } from '../recipes/recipe.schema';
+import { Recipe } from '../recipes/schema/recipe.schema';
 import { User } from './user.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request } from 'express';

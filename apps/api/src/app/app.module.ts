@@ -8,6 +8,9 @@ import { PingService } from './ping.service';
 import { HttpModule } from '@nestjs/axios';
 import { TranslationModule } from '../translation/translation.module';
 
+import { IngredientsModule } from '../ingredients/ingredients.module';
+import { UnitsModule } from '../units/units.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -20,6 +23,8 @@ import { TranslationModule } from '../translation/translation.module';
     UsersModule,
     AuthModule,
     HttpModule,
+    IngredientsModule,
+    UnitsModule,
   ],
   providers: [PingService],
 })

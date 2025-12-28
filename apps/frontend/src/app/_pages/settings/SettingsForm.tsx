@@ -23,7 +23,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
-import apiClient from '@/app/apiClient';
+import { apiClient } from '@/app/api-client';
 import { User } from '../../auth/authStore';
 import {
   Select,
@@ -42,7 +42,7 @@ const settingsSchema = z.object({
 type SettingsFormValues = z.infer<typeof settingsSchema>;
 
 interface SettingsFormProps {
-  user: User;
+  user: User | null;
   dict: Record<string, string>;
 }
 
@@ -51,9 +51,9 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
     defaultValues: {
-      displayName: user.displayName || '',
-      theme: user.theme,
-      gender: user.gender ?? null,
+      displayName: user?.displayName || '',
+      theme: user?.theme,
+      gender: user?.gender ?? null,
     },
   });
   const [saving, setSaving] = useState(false);
@@ -67,9 +67,16 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
         gender: values.gender,
       });
       //   setTheme(values.theme);
-    } catch (e: any) {
-      if (e?.response?.data?.message) {
-        form.setError('displayName', { message: e.response.data.message });
+    } catch (e: unknown) {
+      if (e && typeof e === 'object' && 'response' in e) {
+        const error = e as { response?: { data?: { message?: string } } };
+        if (error?.response?.data?.message) {
+          form.setError('displayName', {
+            message: error.response.data.message,
+          });
+        } else {
+          console.error('Failed to update settings', e);
+        }
       } else {
         console.error('Failed to update settings', e);
       }
@@ -84,7 +91,8 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
     setGenerating(true);
     try {
       const displayName = form.getValues('displayName');
-      const email = user.email;
+      const email = user?.email;
+      if (!email) return;
       const { data } = await apiClient.get(
         `users/generate-user-name?displayName=${encodeURIComponent(
           displayName

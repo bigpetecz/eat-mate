@@ -1,7 +1,7 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from '../app/app.module';
 import { getModelToken } from '@nestjs/mongoose';
-import { Recipe } from '../recipes/recipe.schema';
+import { Recipe } from '../recipes/schema/recipe.schema';
 import slugify from 'slugify';
 
 async function runMigration() {

@@ -8,7 +8,6 @@ import {
   specialAttributes,
 } from '@/lib/recipe-labels';
 import { Badge } from '@/components/ui/badge';
-import apiClient from '@/app/apiClient';
 import { RecipeActions } from '@/components/recipe/recipe-actions';
 import { RecipeRating } from '@/components/recipe/recipe-rating';
 import { ServingsIngredients } from '@/components/recipe/servings-ingredients';
@@ -26,7 +25,8 @@ export const DAILY_VALUES = {
 import { recipeDetailDictionary } from '@/dictionaries/recipeDetail';
 import { Nutritions } from '@/components/recipe/nutritions';
 import { Recipe } from '@/types/recipe';
-import { getUser } from '@/app/auth/getUser';
+import { fetchWithAuth } from '@/lib/server-api';
+import { User } from '@/app/auth/authStore';
 
 export default async function RecipePage({
   params,
@@ -40,15 +40,20 @@ export default async function RecipePage({
   const { slug, language } = await params;
   const dict = recipeDetailDictionary[language] || recipeDetailDictionary['en'];
   try {
-    const res = await apiClient.get(`/recipes/${language}/recipe/${slug}`);
-    recipe = res.data;
+    recipe = await fetchWithAuth(`/recipes/${language}/recipe/${slug}`, {
+      method: 'GET',
+    });
   } catch (error) {
     console.error('Failed to fetch recipe:', error);
     notFound();
   }
-
-  const user = await getUser();
-
+  let user: User | null = null;
+  try {
+    user = await fetchWithAuth('/auth/me', { method: 'GET' });
+  } catch {
+    // 401 is expected for non-authenticated users
+    console.warn('User not authenticated');
+  }
   if (!recipe) return notFound();
 
   return (
@@ -76,8 +81,10 @@ export default async function RecipePage({
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 w-full">
               <h1 className="text-3xl font-bold flex-1">{recipe.title}</h1>
               <RecipeActions
-                recipeId={recipe._id}
+                recipe={recipe}
                 authorId={recipe.author}
+                user={user}
+                language={language}
                 actionsDict={{
                   addToFavorites: dict.addToFavorites,
                   removeFromFavorites: dict.removeFromFavorites,
@@ -203,13 +210,6 @@ export default async function RecipePage({
                       : '-'}
                   </div>
                 </div>
-              </div>
-              <div className="w-full md:w-1/2 flex-shrink-0 flex-grow-0">
-                <Nutritions
-                  dict={dict}
-                  recipe={recipe}
-                  userGender={user?.gender ?? null}
-                />
                 <div className="mt-6">
                   <h3 className="font-medium mb-2">{dict.specialAttributes}</h3>
                   <div className="flex flex-wrap gap-2">
@@ -228,6 +228,13 @@ export default async function RecipePage({
                   </div>
                 </div>
               </div>
+              <div className="w-full md:w-1/2 flex-shrink-0 flex-grow-0">
+                <Nutritions
+                  dict={dict}
+                  recipe={recipe}
+                  userGender={user?.gender ?? null}
+                />
+              </div>
             </div>
           </div>
         </Card>
@@ -235,7 +242,7 @@ export default async function RecipePage({
       </div>
       {/* Full-width white section for ingredients and instructions */}
       <div className="bg-background w-full py-10">
-        <div className="max-w-6xl mx-auto px-4 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
           <ServingsIngredients
             servings={recipe.servings}
             ingredients={recipe.ingredients}
@@ -244,7 +251,7 @@ export default async function RecipePage({
               servings: dict.servings,
             }}
           />
-          <div>
+          <div className="px-8">
             <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
               <svg
                 className="w-5 h-5 text-muted-foreground"

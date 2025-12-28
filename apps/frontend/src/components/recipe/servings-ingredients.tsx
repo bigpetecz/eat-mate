@@ -8,28 +8,33 @@ import {
   SelectItem,
 } from '@/components/ui/select';
 
-function parseQuantity(q: string): { value: number; unit: string } | null {
-  const match = q.match(/^([\d./]+)\s*(.*)$/);
-  if (!match) return null;
-  const valueStr = match[1];
-  let value: number;
-  if (valueStr.includes('/')) {
-    const [num, denom] = valueStr.split('/').map(Number);
-    if (!isNaN(num) && !isNaN(denom) && denom !== 0) value = num / denom;
-    else return null;
-  } else {
-    value = parseFloat(valueStr);
+function toMixedFraction(value: number): string {
+  const tolerance = 1e-4;
+  const denominators = [2, 3, 4, 8];
+  const whole = Math.floor(value);
+  const frac = value - whole;
+  for (const denom of denominators) {
+    const num = Math.round(frac * denom);
+    if (Math.abs(frac - num / denom) < tolerance && num !== 0) {
+      if (whole === 0) return `${num}/${denom}`;
+      return `${whole} ${num}/${denom}`;
+    }
   }
-  if (isNaN(value)) return null;
-  return { value, unit: match[2] };
+  return value % 1 === 0 ? String(value) : value.toFixed(2);
 }
 
-function formatQuantity(value: number, unit: string): string {
-  return `${parseFloat(value.toFixed(2))} ${unit}`.trim();
+function formatQuantity(
+  value: number,
+  unit: string
+): { main: string; unit: string } {
+  return {
+    main: toMixedFraction(value),
+    unit: unit,
+  };
 }
 
 interface ServingsIngredientsProps {
-  ingredients: { name: string; quantity: string }[];
+  ingredients: { name: string; quantity: string; unit: string }[];
   servings: number;
   labels: {
     ingredients: string;
@@ -80,23 +85,32 @@ export const ServingsIngredients: FC<ServingsIngredientsProps> = ({
           </Select>
         </div>
       </div>
-      <ul className="list-disc list-inside space-y-1">
+      <ul className="space-y-1">
         {ingredients?.map((ing, idx) => {
-          const parsed = parseQuantity(ing.quantity);
-          if (parsed) {
-            const scaled = formatQuantity(parsed.value * scale, parsed.unit);
-            return (
-              <li key={idx}>
-                <span>{ing.name}</span>: {scaled}
-              </li>
+          if (ing.quantity) {
+            const scaled = formatQuantity(
+              Number(ing.quantity) * scale,
+              ing.unit
             );
-          } else {
             return (
-              <li key={idx}>
-                <span>{ing.name}</span>: {ing.quantity}
+              <li key={idx} className="flex gap-2 items-baseline">
+                <span className="ml-1">{ing.name}:</span>
+                <span className="font-mono font-semibold text-base">
+                  {scaled.main}
+                </span>
+                {scaled.unit && (
+                  <span className="text-muted-foreground text-sm">
+                    {scaled.unit}
+                  </span>
+                )}
               </li>
             );
           }
+          return (
+            <li key={idx} className="flex gap-2 items-baseline">
+              <span className="ml-1">{ing.name}</span>
+            </li>
+          );
         })}
       </ul>
     </div>

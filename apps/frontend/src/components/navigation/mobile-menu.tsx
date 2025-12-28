@@ -2,7 +2,7 @@
 
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -15,14 +15,11 @@ import {
   Menu as MenuIcon,
   PencilIcon,
 } from 'lucide-react';
-import { User } from '../../app/auth/authStore';
 import { DialogTitle } from '@/components/ui/dialog';
+import { User } from '@/app/auth/authStore';
+import { apiClient } from '@/app/api-client';
 
-interface MobileMenuProps {
-  user: User;
-}
-
-export const MobileMenu: FC<MobileMenuProps> = ({ user }) => {
+export const MobileMenu: FC = () => {
   const [open, setOpen] = useState(false);
   const params = useParams();
   const language =
@@ -44,6 +41,14 @@ export const MobileMenu: FC<MobileMenuProps> = ({ user }) => {
     { title: 'Login', icon: LogInIcon, url: `/${language}/sign-in` },
     { title: 'Sign Up', icon: Book, url: `/${language}/sign-up` },
   ];
+
+  const [user, setUser] = useState<User | null>(null);
+
+  useEffect(() => {
+    apiClient.get<User>('/auth/me').then((res) => {
+      setUser(res.data);
+    });
+  }, []);
 
   const handleClose = () => setOpen(false);
 

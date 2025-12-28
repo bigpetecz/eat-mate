@@ -1,152 +1,39 @@
-// Translation reference type
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
+import * as mongoose from 'mongoose';
+import { Document } from 'mongoose';
+import { User } from '../users/user.schema';
+import { WinePairing, Technique } from './recipe.enums';
+import {
+  RecipeIngredient,
+  RecipeIngredientSchema,
+  Nutrition,
+} from './schema/recipe-ingredient.schema';
+import { Flavour, FlavourSchema } from './schema/flavour.schema';
+import { AIInfo, AIInfoSchema } from './schema/recipe-ai-info.schema';
+import { Rating, RatingSchema } from './schema/recipe-rating.schema';
+import type { RecipeLanguage } from './recipe.enums';
+import slugify from 'slugify';
+
+// References for translations to other language versions
 export interface RecipeTranslationRef {
   language: RecipeLanguage;
   recipeId: mongoose.Types.ObjectId;
 }
-import slugify from 'slugify';
-// Supported languages for recipes (expand as needed)
-export type RecipeLanguage = 'en' | 'cs';
-import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import * as mongoose from 'mongoose';
-import { User } from '../users/user.schema';
-
-export enum WinePairing {
-  CabernetSauvignon = 'cabernet-sauvignon',
-  PinotNoir = 'pinot-noir',
-  Merlot = 'merlot',
-  Chardonnay = 'chardonnay',
-  SauvignonBlanc = 'sauvignon-blanc',
-  Riesling = 'riesling',
-  Syrah = 'syrah',
-  Zinfandel = 'zinfandel',
-  Rosé = 'rosé',
-  Sparkling = 'sparkling',
-  DessertWine = 'dessert-wine',
-}
-
-export enum Technique {
-  Boiling = 'boiling',
-  Blanching = 'blanching',
-  Steaming = 'steaming',
-  Poaching = 'poaching',
-  Simmering = 'simmering',
-  Stewing = 'stewing',
-  Braising = 'braising',
-  Roasting = 'roasting',
-  Baking = 'baking',
-  Grilling = 'grilling',
-  Broiling = 'broiling',
-  Sauteing = 'sauteing',
-  StirFrying = 'stir-frying',
-  DeepFrying = 'deep-frying',
-  PanFrying = 'pan-frying',
-  Smoking = 'smoking',
-  Pickling = 'pickling',
-  Fermenting = 'fermenting',
-  SousVide = 'sous-vide',
-  Raw = 'raw',
-}
-
-export enum DietLabel {
-  Vegetarian = 'vegetarian',
-  Vegan = 'vegan',
-  Pescatarian = 'pescatarian',
-  GlutenFree = 'gluten-free',
-  DairyFree = 'dairy-free',
-  NutFree = 'nut-free',
-  SoyFree = 'soy-free',
-  LowCarb = 'low-carb',
-  LowFat = 'low-fat',
-  Paleo = 'paleo',
-  Keto = 'keto',
-  Whole30 = 'whole30',
-  Halal = 'halal',
-  Kosher = 'kosher',
-}
-
-export enum SpecialAttribute {
-  OnePot = 'one-pot',
-  OnePan = 'one-pan',
-  SlowCooker = 'slow-cooker',
-  InstantPot = 'instant-pot',
-  AirFryer = 'air-fryer',
-  NoCook = 'no-cook',
-  FreezerFriendly = 'freezer-friendly',
-  MealPrep = 'meal-prep',
-  ThirtyMinute = '30-minute',
-  FiveIngredients = '5-ingredients',
-  KidFriendly = 'kid-friendly',
-}
-
-@Schema({ _id: false })
-class Ingredient {
-  @Prop({ required: true })
-  name: string;
-
-  @Prop({ required: true })
-  quantity: string;
-}
-
-@Schema({ _id: false })
-class Nutrition {
-  @Prop() calories: number;
-  @Prop() protein: number;
-  @Prop() fat: number;
-  @Prop() carbs: number;
-  @Prop() fiber: number;
-  @Prop() sugar: number;
-  @Prop() sodium: number;
-}
-
-@Schema({ _id: false, timestamps: true })
-class AIInfo {
-  @Prop() nutrition: Nutrition; // full breakdown
-  @Prop({ type: [String], enum: DietLabel, default: [] })
-  dietLabels: DietLabel[];
-  @Prop() winePairing: string;
-  @Prop({ type: [String] }) keywords: string[]; // e.g., "quick lunch", "low carb"
-  @Prop({ type: [mongoose.Schema.Types.ObjectId], ref: 'Recipe' })
-  relatedRecipes: mongoose.Types.ObjectId[];
-  @Prop({ type: [String], enum: Technique, default: [] })
-  techniques: Technique[];
-  @Prop({ enum: ['Easy', 'Medium', 'Hard'] })
-  difficulty: string;
-  @Prop()
-  estimatedCost: number;
-  @Prop() hash: string;
-  @Prop({ type: [String], enum: SpecialAttribute, default: [] })
-  specialAttributes: SpecialAttribute[];
-}
-
-const AIInfoSchema = SchemaFactory.createForClass(AIInfo);
-
-class Rating {
-  @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
-  user: User;
-
-  @Prop({ type: Number, min: 1, max: 5, required: true })
-  value: number;
-}
-
-const RatingSchema = SchemaFactory.createForClass(Rating);
 
 @Schema({ timestamps: true })
-export class Recipe extends mongoose.Document {
-  // === USER-ENTERED ===
+export class Recipe extends Document {
   @Prop({ type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true })
   author: User;
 
   @Prop({ required: true, trim: true })
   title: string;
 
-  @Prop({ required: true, default: 'en' })
+  @Prop({ type: String, required: true, enum: ['en', 'cs'], default: 'en' })
   language: RecipeLanguage;
 
-  // SEO-friendly, unique, English slug
   @Prop({ required: true, unique: true, trim: true })
   slug: string;
 
-  // References to the same recipe in other languages
   @Prop({
     type: [
       {
@@ -161,6 +48,7 @@ export class Recipe extends mongoose.Document {
     default: [],
   })
   translations: RecipeTranslationRef[];
+
   @Prop({ required: true })
   description: string;
 
@@ -179,8 +67,8 @@ export class Recipe extends mongoose.Document {
   @Prop()
   servings: number;
 
-  @Prop({ type: [Ingredient], required: true })
-  ingredients: Ingredient[];
+  @Prop({ type: [RecipeIngredientSchema], default: [] })
+  ingredients: RecipeIngredient[];
 
   @Prop({ type: [String], required: true })
   instructions: string[];
@@ -188,17 +76,24 @@ export class Recipe extends mongoose.Document {
   @Prop()
   country: string;
 
+  @Prop({ type: String, enum: WinePairing, required: false })
+  winePairing?: WinePairing;
+
   @Prop({ type: [String], enum: Technique, default: [] })
   techniques: Technique[];
 
   @Prop({ type: [String], default: [] })
   tags: string[];
 
-  // === AI-ENRICHED ===
+  @Prop({ type: Nutrition, required: false })
+  nutritionInfo?: Nutrition;
+
+  @Prop({ type: FlavourSchema })
+  flavour?: Flavour;
+
   @Prop({ type: AIInfoSchema, default: {} })
   ai: AIInfo;
 
-  // === RATINGS ===
   @Prop({ type: [RatingSchema], default: [] })
   ratings: Rating[];
 

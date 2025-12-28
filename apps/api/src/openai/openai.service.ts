@@ -3,10 +3,10 @@ import { ConfigService } from '@nestjs/config';
 import OpenAI from 'openai';
 import {
   DietLabel,
+  SpecialAttribute,
   Technique,
   WinePairing,
-  SpecialAttribute,
-} from '../recipes/recipe.schema';
+} from '../recipes/recipe.enums';
 
 @Injectable()
 export class OpenAIService {
@@ -54,6 +54,15 @@ export class OpenAIService {
     techniques?: Technique[];
     difficulty?: string;
     specialAttributes?: string[];
+    flavour?: {
+      sweetness: number;
+      saltiness: number;
+      sourness: number;
+      bitterness: number;
+      savoriness: number;
+      fattiness: number;
+      spiciness: number;
+    };
   }> {
     const allowedDietLabels = Object.values(DietLabel);
     const allowedTechniques = Object.values(Technique);
@@ -62,19 +71,22 @@ export class OpenAIService {
     const allowedSpecialAttributes = Object.values(SpecialAttribute);
 
     const prompt = `Given the following recipe, extract:
-- all applicable diet labels (array, e.g. vegan, vegetarian, gluten-free, etc.)
-- all applicable techniques (array, e.g. boiling, grilling, etc.)
-- all applicable special attributes (array, e.g. one-pot, slow-cooker, meal-prep, etc.), only use from this list: ${allowedSpecialAttributes.join(
+all applicable diet labels (array, e.g. vegan, vegetarian, gluten-free, etc.)
+all applicable techniques (array, e.g. boiling, grilling, etc.)
+all applicable special attributes (array, e.g. one-pot, slow-cooker, meal-prep, etc.), only use from this list: ${allowedSpecialAttributes.join(
       ', '
     )}, and return as specialAttributes
-- estimate nutrition per serving (object: calories, protein, fat, carbs, fiber, sugar, sodium), using the number of servings and ingredient amounts. Calories must be per serving, not for the whole recipe.
-- estimate price per 1 serving in Euro (number, e.g. 2.50) and return as estimatedCost
-- suggest a wine pairing (string) for this recipe, must be one of: ${allowedWinePairings.join(
+estimate nutrition per serving (object: calories, protein, fat, carbs, fiber, sugar, sodium), using the number of servings and ingredient amounts. Calories must be per serving, not for the whole recipe.
+estimate price per 1 serving in Euro (number, e.g. 2.50) and return as estimatedCost
+suggest a wine pairing (string) for this recipe, must be one of: ${allowedWinePairings.join(
       ', '
     )}, and return as winePairing if applicable.
-- assign a difficulty (string) for this recipe, must be one of: ${allowedDifficulties.join(
+assign a difficulty (string) for this recipe, must be one of: ${allowedDifficulties.join(
       ', '
     )}, and return as difficulty
+
+Estimate a flavour profile for this recipe as an object with these keys (all numbers 0-100):
+sweetness, saltiness, sourness, bitterness, savoriness, fattiness, spiciness. Return as 'flavour'.
 
 Recipe:
 Title: ${recipe.title}
@@ -86,7 +98,7 @@ Ingredients: ${recipe.ingredients
       .join(', ')}
 Instructions: ${(recipe.instructions || []).join(' ')}
 
-Respond in JSON with keys: dietLabels, techniques, specialAttributes, nutrition, estimatedCost, winePairing, difficulty. For dietLabels, only use from this list: ${allowedDietLabels.join(
+Respond in JSON with keys: dietLabels, techniques, specialAttributes, nutrition, estimatedCost, winePairing, difficulty, flavour. For dietLabels, only use from this list: ${allowedDietLabels.join(
       ', '
     )}. For techniques, only use from this list: ${allowedTechniques.join(
       ', '
@@ -120,7 +132,7 @@ Respond in JSON with keys: dietLabels, techniques, specialAttributes, nutrition,
         techniques: parsed.techniques,
         specialAttributes: Array.isArray(parsed.specialAttributes)
           ? parsed.specialAttributes.filter((a: string) =>
-              allowedSpecialAttributes.includes(a)
+              allowedSpecialAttributes.includes(a as SpecialAttribute)
             )
           : [],
         estimatedCost: parsed.estimatedCost,
@@ -130,6 +142,7 @@ Respond in JSON with keys: dietLabels, techniques, specialAttributes, nutrition,
         difficulty: allowedDifficulties.includes(parsed.difficulty)
           ? parsed.difficulty
           : undefined,
+        flavour: parsed.flavour,
       };
     } catch (err) {
       this.logger.error(

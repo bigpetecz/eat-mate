@@ -1,11 +1,12 @@
 'use client';
 import { useEffect } from 'react';
-import apiClient from '../../apiClient';
 import { Spinner } from '@/components/ui/spinner';
 import { useAuthStore } from '../../auth/authStore';
+import { apiClient } from '@/app/api-client';
 
 export default function LogoutPage() {
   const logout = useAuthStore((s) => s.logout);
+
   useEffect(() => {
     apiClient.post('/auth/logout').finally(() => {
       logout();

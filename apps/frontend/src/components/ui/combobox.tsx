@@ -17,13 +17,13 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from '@/components/ui/popover';
-import { FC } from 'react';
+import { FC, ReactNode } from 'react';
 
 interface ComboboxProps {
   searchPlaceholder?: string;
   selectPlaceholder?: string;
   noOptionsText?: string;
-  options: { label: string; value: string }[];
+  options: { label: string; value: string; icon?: ReactNode }[];
   value?: string;
   onChange: (value: string) => void;
   triggerClassName?: string; // Optional custom class for trigger button
@@ -47,6 +47,7 @@ export const Combobox: FC<ComboboxProps> = ({
         >
           {value ? (
             <span className="text-foreground">
+              {options.find((option) => option.value === value)?.icon}{' '}
               {options.find((option) => option.value === value)?.label}
             </span>
           ) : (
@@ -67,6 +68,7 @@ export const Combobox: FC<ComboboxProps> = ({
                   key={option.value}
                   onSelect={() => onChange(option.value)}
                 >
+                  {option?.icon && <span>{option.icon}</span>}
                   {option.label}
                   <Check
                     className={cn(

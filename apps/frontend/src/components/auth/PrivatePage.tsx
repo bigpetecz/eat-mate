@@ -7,7 +7,7 @@ import { Spinner } from '../ui/spinner';
 import { getLocalizedRoute, Locale } from '@/i18n';
 
 interface PrivatePageProps {
-  user: User;
+  user: User | null;
   children: ReactNode;
 }
 

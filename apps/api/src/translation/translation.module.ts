@@ -7,7 +7,7 @@ import {
   TranslationUsage,
   TranslationUsageSchema,
 } from './translation-usage.schema';
-import { Recipe, RecipeSchema } from '../recipes/recipe.schema';
+import { Recipe, RecipeSchema } from '../recipes/schema/recipe.schema';
 import {
   TranslationUsageTotal,
   TranslationUsageTotalSchema,
