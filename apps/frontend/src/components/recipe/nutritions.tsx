@@ -50,7 +50,9 @@ export const Nutritions: FC<NutritionsProps> = ({
       <div className="mb-4 space-y-2">
         <h3 className="font-medium">{dict.nutritionPerServing}</h3>
         <div className="flex items-center gap-2 text-sm">
-          <span className="text-muted-foreground">Based on</span>
+          <span className="text-muted-foreground">
+            {dict.basedOn || 'Based on'}
+          </span>
           <div className="inline-flex rounded-lg border bg-background p-1 shadow-sm">
             <Button
               type="button"
