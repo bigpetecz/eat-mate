@@ -18,5 +18,20 @@ jobs:
             exit 1
           fi
 
-          echo "Pinging $KEEP_ALIVE_API_URL"
-          curl --fail --silent --show-error --max-time 20 "$KEEP_ALIVE_API_URL"
+          base_url="${KEEP_ALIVE_API_URL%/}"
+          first_try="$KEEP_ALIVE_API_URL"
+          health_try="$base_url/health"
+          api_health_try="$base_url/api/health"
+
+          # Try the configured URL first, then common Nest/Render health paths.
+          # Some deployments return 404 on one path but are still healthy.
+          for url in "$first_try" "$health_try" "$api_health_try"; do
+            echo "Pinging $url"
+            if curl --fail --silent --show-error --max-time 20 "$url" >/dev/null; then
+              echo "Keep-alive ping succeeded: $url"
+              exit 0
+            fi
+          done
+
+          echo "Keep-alive ping failed for all URL variants"
+          exit 1
