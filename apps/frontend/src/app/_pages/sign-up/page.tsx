@@ -11,19 +11,20 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getLocalizedRoute, Locale } from '@/i18n';
 import { getDictionary } from '@/dictionaries/dictionaries';
 
 interface RegisterForm {
-  name: string;
+  displayName: string;
   email: string;
   password: string;
 }
 
 export default function RegisterPage() {
   const { language = 'en' } = useParams();
+  const router = useRouter();
   const [dictionary, setDictionary] = useState<Record<string, string>>();
 
   useEffect(() => {
@@ -49,17 +50,28 @@ export default function RegisterPage() {
       const res = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
+        body: JSON.stringify({
+          displayName: data.displayName,
+          email: data.email,
+          password: data.password,
+        }),
       });
       if (!res.ok) {
         const err = await res.json();
         setServerError(err.message || t('registrationFailed'));
         return;
       }
-      window.location.replace('/sign-in');
-    } catch (e) {
+      router.replace(getLocalizedRoute('login', language as Locale));
+    } catch {
       setServerError(t('networkError'));
     }
+  };
+
+  const handleGoogleSignUp = () => {
+    const state = encodeURIComponent(
+      `${window.location.pathname}${window.location.search}`
+    );
+    window.location.assign(`/api/auth/google?state=${state}`);
   };
 
   if (!dictionary) {
@@ -78,15 +90,17 @@ export default function RegisterPage() {
             <form onSubmit={handleSubmit(onSubmit)}>
               <div className="flex flex-col gap-6">
                 <div className="grid gap-3">
-                  <Label htmlFor="name">{t('name')}</Label>
+                  <Label htmlFor="displayName">{t('name')}</Label>
                   <Input
-                    id="name"
-                    {...register('name', { required: t('nameRequired') })}
+                    id="displayName"
+                    {...register('displayName', {
+                      required: t('nameRequired'),
+                    })}
                     autoComplete="name"
                   />
-                  {errors.name && (
+                  {errors.displayName && (
                     <span className="text-xs text-red-500">
-                      {errors.name.message}
+                      {errors.displayName.message}
                     </span>
                   )}
                 </div>
@@ -142,7 +156,12 @@ export default function RegisterPage() {
                     {isSubmitting ? t('signingUp') : t('signUp')}
                   </Button>
                   <span>{t('or')}</span>
-                  <Button variant="outline" className="w-full cursor-pointer">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    className="w-full cursor-pointer"
+                    onClick={handleGoogleSignUp}
+                  >
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
                       <path
                         d="M12.48 10.92v3.28h7.84c-.24 1.84-.853 3.187-1.787 4.133-1.147 1.147-2.933 2.4-6.053 2.4-4.827 0-8.6-3.893-8.6-8.72s3.773-8.72 8.6-8.72c2.6 0 4.507 1.027 5.907 2.347l2.307-2.307C18.747 1.44 16.133 0 12.48 0 5.867 0 .307 5.387.307 12s5.56 12 12.173 12c3.573 0 6.267-1.173 8.373-3.36 2.16-2.16 2.84-5.213 2.84-7.667 0-.76-.053-1.467-.173-2.053H12.48z"

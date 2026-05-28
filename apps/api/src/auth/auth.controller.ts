@@ -6,6 +6,8 @@ import {
   UseGuards,
   Req,
   Res,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthGuard } from '@nestjs/passport';
@@ -13,8 +15,11 @@ import type { Request, Response } from 'express';
 import { JwtAuthGuard } from './jwt-auth.guard';
 import { User } from './user.decorator';
 import { ConfigService } from '@nestjs/config';
+import { RegisterDto } from './dto/register.dto';
+import { LoginDto } from './dto/login.dto';
 
 @Controller('auth')
+@UsePipes(new ValidationPipe({ transform: true, whitelist: true }))
 export class AuthController {
   constructor(
     private readonly authService: AuthService,
@@ -22,13 +27,8 @@ export class AuthController {
   ) {}
 
   @Post('register')
-  async register(
-    @Body('googleId') googleId: string,
-    @Body('email') email: string,
-    @Body('password') password: string,
-    @Body('displayName') displayName: string
-  ) {
-    return this.authService.register(googleId, email, password, displayName);
+  async register(@Body() dto: RegisterDto) {
+    return this.authService.register(dto);
   }
 
   @Post('logout')
@@ -51,12 +51,8 @@ export class AuthController {
   }
 
   @Post('login')
-  async login(
-    @Body('email') email: string,
-    @Body('password') password: string,
-    @Res() res: Response
-  ) {
-    const result = await this.authService.login(email, password);
+  async login(@Body() dto: LoginDto, @Res() res: Response) {
+    const result = await this.authService.login(dto.email, dto.password);
     // Set JWT as HTTP-only cookie
     res.cookie('token', result.access_token, {
       httpOnly: true,
@@ -78,7 +74,11 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleAuthRedirect(@Req() req: Request, @Res() res: Response) {
     const user = req.user as { access_token: string; state?: string };
+    const queryState =
+      typeof req.query.state === 'string' ? req.query.state : undefined;
     const { access_token, state } = user;
+    const requestedState = state || queryState || '/';
+    const safeState = requestedState.startsWith('/') ? requestedState : '/';
     // Set JWT as HTTP-only cookie
     res.cookie('token', access_token, {
       httpOnly: true,
@@ -90,13 +90,13 @@ export class AuthController {
     // Redirect without token in URL
     const redirectUrl = `${this.configService.get(
       'FRONTEND_URL'
-    )}/auth/callback?state=${encodeURIComponent(state || '/')}`;
+    )}/auth/callback?state=${encodeURIComponent(safeState)}`;
     return res.redirect(redirectUrl);
   }
 
   @Get('me')
   @UseGuards(JwtAuthGuard)
-  async getMe(@User() user: { id: string; email: string }) {
-    return this.authService.findUserByEmail(user.email);
+  async getMe(@User() user: { userId: string; email: string }) {
+    return this.authService.getSafeUserByEmail(user.email);
   }
 }

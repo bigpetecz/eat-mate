@@ -125,7 +125,10 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     pattern: RegExp;
     paramNames?: string[];
   }> = [
-    { key: 'discover', pattern: new RegExp(`^/(${localesPattern})/discover$`) },
+    {
+      key: 'discover',
+      pattern: new RegExp(`^/(${localesPattern})/(discover|objevuj)$`),
+    },
     { key: 'recipes', pattern: new RegExp(`^/(${localesPattern})/recipes$`) },
     {
       key: 'signUp',
@@ -133,7 +136,9 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     },
     {
       key: 'login',
-      pattern: new RegExp(`^/(${localesPattern})/(login|prihlaseni)$`),
+      pattern: new RegExp(
+        `^/(${localesPattern})/(login|sign-in|prihlaseni|prihlasit-se)$`
+      ),
     },
     {
       key: 'userSettings',
@@ -141,19 +146,21 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     },
     {
       key: 'recipeDetail',
-      pattern: new RegExp(`^/(${localesPattern})/(recipe|recepty)/([^/]+)$`),
+      pattern: new RegExp(
+        `^/(${localesPattern})/(recipe|recept|recepty)/([^/]+)$`
+      ),
       paramNames: ['slug'],
     },
     {
       key: 'recipeCreate',
       pattern: new RegExp(
-        `^/(${localesPattern})/(recipe|recepty)/(create|vytvorit)$`
+        `^/(${localesPattern})/(recipe|recept|recepty)/(create|vytvorit)$`
       ),
     },
     {
       key: 'recipeEdit',
       pattern: new RegExp(
-        `^/(${localesPattern})/(recipe|recepty)/([^/]+)/(edit|upravit)$`
+        `^/(${localesPattern})/(recipe|recept|recepty)/([^/]+)/(edit|upravit)$`
       ),
       paramNames: ['slug'],
     },
@@ -163,7 +170,9 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     },
     {
       key: 'favorites',
-      pattern: new RegExp(`^/(${localesPattern})/(favorites|oblíbene)$`),
+      pattern: new RegExp(
+        `^/(${localesPattern})/(favorites|oblibene|oblíbene)$`
+      ),
     },
   ];
   for (const { key, pattern, paramNames } of matchers) {

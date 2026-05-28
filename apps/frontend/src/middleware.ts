@@ -35,28 +35,32 @@ export function middleware(request: NextRequest) {
   }
 
   // 2. Auth enforcement for protected routes
-  // strip locale from path
-  const [, locale, ...segments] = pathname.split('/');
-  const pathWithoutLocale = '/' + segments.join('/');
+  const [, locale] = pathname.split('/');
+  const normalizedLocale = locales.includes(locale) ? locale : defaultLocale;
   const protectedPaths = [
     getLocalizedRoute('favorites', 'en'),
     getLocalizedRoute('myRecipes', 'en'),
     getLocalizedRoute('recipeCreate', 'en'),
-    getLocalizedRoute('recipeEdit', 'en', '*'),
     getLocalizedRoute('userSettings', 'en'),
     getLocalizedRoute('favorites', 'cs'),
     getLocalizedRoute('myRecipes', 'cs'),
     getLocalizedRoute('recipeCreate', 'cs'),
-    getLocalizedRoute('recipeEdit', 'cs', '*'),
     getLocalizedRoute('userSettings', 'cs'),
   ];
-  const isProtected = protectedPaths.some((p) =>
-    pathWithoutLocale.startsWith(p)
+  const isProtectedStatic = protectedPaths.some(
+    (p) => pathname === p || pathname.startsWith(`${p}/`)
   );
+  const isProtectedRecipeEdit =
+    /^\/en\/recipe\/[^/]+\/edit$/.test(pathname) ||
+    /^\/cs\/recept\/[^/]+\/upravit$/.test(pathname);
+  const isProtected = isProtectedStatic || isProtectedRecipeEdit;
   const token = request.cookies.get('token')?.value;
   if (isProtected && !token) {
     const loginUrl = request.nextUrl.clone();
-    loginUrl.pathname = `/${locale}/login`;
+    loginUrl.pathname = getLocalizedRoute(
+      'login',
+      normalizedLocale as 'en' | 'cs'
+    );
     return NextResponse.redirect(loginUrl);
   }
 

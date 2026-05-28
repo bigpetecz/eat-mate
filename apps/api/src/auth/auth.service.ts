@@ -8,6 +8,15 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { User } from '../users/user.schema';
 import * as bcrypt from 'bcryptjs';
+import { RegisterDto } from './dto/register.dto';
+import { UserProfileDto } from './dto/user-profile.dto';
+
+interface GoogleProfile {
+  id: string;
+  emails?: Array<{ value: string }>;
+  displayName: string;
+  photos?: Array<{ value: string }>;
+}
 
 @Injectable()
 export class AuthService {
@@ -16,43 +25,59 @@ export class AuthService {
     private readonly jwtService: JwtService
   ) {}
 
-  async register(
-    googleId: string,
-    email: string,
-    password: string,
-    displayName: string
-  ) {
+  private mapToSafeUser(user: User): UserProfileDto {
+    return {
+      id: String(user._id),
+      email: user.email,
+      displayName: user.displayName,
+      theme: user.theme,
+      picture: user.picture,
+      gender: user.gender,
+    };
+  }
+
+  async register(dto: RegisterDto) {
+    const { displayName, email, password } = dto;
     const existing = await this.userModel.findOne({ email });
     if (existing) {
       throw new ConflictException('User already exists');
+    }
+    const existingDisplayName = await this.userModel.findOne({ displayName });
+    if (existingDisplayName) {
+      throw new ConflictException('Display name is already taken');
     }
     const hash = await bcrypt.hash(password, 10);
     const user = new this.userModel({
       email,
       password: hash,
       displayName,
-      googleId,
+      googleId: null,
     });
-    return user.save();
+    await user.save();
+    return this.mapToSafeUser(user);
   }
 
   async validateUser(email: string, password: string) {
-    const user = await this.userModel.findOne({ email });
+    const user = await this.userModel.findOne({ email }).select('+password');
     if (user && (await bcrypt.compare(password, user.password))) {
       return user;
     }
     return null;
   }
 
-  async findUserByEmail(email: string): Promise<User | null> {
-    return this.userModel.findOne({ email }).exec();
+  async getSafeUserByEmail(email: string): Promise<UserProfileDto | null> {
+    const user = await this.userModel.findOne({ email }).exec();
+    if (!user) {
+      return null;
+    }
+    return this.mapToSafeUser(user);
   }
 
   private generateJwt(user: User) {
     const payload = { sub: user._id, email: user.email };
     return {
       access_token: this.jwtService.sign(payload),
-      user: { id: user._id, email: user.email, displayName: user.displayName },
+      user: this.mapToSafeUser(user),
     };
   }
 
@@ -62,10 +87,16 @@ export class AuthService {
     return this.generateJwt(user);
   }
 
-  async validateGoogleUser(profile: any): Promise<any> {
+  async validateGoogleUser(profile: GoogleProfile): Promise<{
+    access_token: string;
+    user: UserProfileDto;
+  }> {
     if (!profile) throw new Error('Google profile is undefined');
     const { id, emails, displayName } = profile;
-    const email = emails[0].value;
+    const email = emails?.[0]?.value;
+    if (!email) {
+      throw new Error('Google profile does not contain an email');
+    }
 
     // Try to find the user in your DB by Google ID or email.
     let user = await this.userModel.findOne({ email });

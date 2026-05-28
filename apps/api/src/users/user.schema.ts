@@ -4,13 +4,13 @@ import * as mongoose from 'mongoose';
 
 @Schema({ timestamps: true }) // This automatically adds createdAt and updatedAt
 export class User extends Document {
-  @Prop({ required: true, unique: true })
-  googleId: string;
+  @Prop({ required: false, unique: true, sparse: true, default: null })
+  googleId: string | null;
 
   @Prop({ required: true, unique: true })
   email: string;
 
-  @Prop()
+  @Prop({ select: false })
   password: string;
 
   @Prop({ required: true, unique: true })
