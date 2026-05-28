@@ -11,6 +11,11 @@ import { User } from '@/app/auth/authStore';
 
 export const metadata = {
   title: 'Eat Mate - Your source for delicious recipes',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/favicon.ico',
+    apple: '/apple-touch-icon.png',
+  },
 };
 
 export default async function RootLayout({

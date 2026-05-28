@@ -1,1 +1,15 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-cooking-pot-icon lucide-cooking-pot"><path d="M2 12h20"/><path d="M20 12v8a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-8"/><path d="m4 8 16-4"/><path d="m8.86 6.78-.45-1.81a2 2 0 0 1 1.45-2.43l1.94-.48a2 2 0 0 1 2.43 1.46l.45 1.8"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256" fill="none">
+	<defs>
+		<linearGradient id="bg" x1="48" y1="32" x2="208" y2="224" gradientUnits="userSpaceOnUse">
+			<stop offset="0" stop-color="#c46421"/>
+			<stop offset="1" stop-color="#e28a4f"/>
+		</linearGradient>
+	</defs>
+	<circle cx="128" cy="128" r="112" fill="url(#bg)"/>
+	<g fill="none" stroke="#ffffff" stroke-linecap="round" stroke-linejoin="round" stroke-width="14">
+		<path d="M60 122h136"/>
+		<path d="M170 122v50a18 18 0 0 1-18 18H104a18 18 0 0 1-18-18v-50"/>
+		<path d="m78 90 100-26"/>
+		<path d="m112 82-2-8a18 18 0 0 1 13-21l16-4a18 18 0 0 1 22 13l4 16"/>
+	</g>
+</svg>
