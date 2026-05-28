@@ -1,7 +1,7 @@
 'use client';
 import { Heart, Share2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect, useMemo, useState } from 'react';
 import {
   Tooltip,
   TooltipTrigger,
@@ -35,32 +35,66 @@ export const RecipeActions: FC<RecipeActionsProps> = ({
 }) => {
   const [copied, setCopied] = useState(false);
   const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
-  const [isAuthor, setIsAuthor] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
+  const isAuthor = Boolean(user?._id && authorId && user._id === authorId);
 
-  const recipeId = recipe._id;
+  const recipeId = recipe._id || recipe.id || '';
+  const recipeMatchIds = useMemo(() => {
+    const recipeTranslationIds = Array.isArray(recipe.translations)
+      ? recipe.translations
+          .map((translation) => translation?.recipeId)
+          .filter((value): value is string => Boolean(value))
+      : [];
+
+    return new Set([recipeId, ...recipeTranslationIds].filter(Boolean));
+  }, [recipe.translations, recipeId]);
   useEffect(() => {
+    if (!user || !recipeId) {
+      setIsFavorite(false);
+      return;
+    }
+
     async function fetchFavorite() {
       try {
         const res = await apiClient.get(`/users/${language}/favorites`);
-        setIsFavorite(res.data.favorites.includes(recipeId));
+        const favoriteRecipes = Array.isArray(res.data?.recipes)
+          ? res.data.recipes
+          : [];
+        setIsFavorite(
+          favoriteRecipes.some(
+            (favoriteRecipe: {
+              _id?: string;
+              translations?: Array<{ recipeId?: string }>;
+            }) => {
+              const favoriteTranslationIds = Array.isArray(
+                favoriteRecipe?.translations
+              )
+                ? favoriteRecipe.translations
+                    .map((translation) => translation?.recipeId)
+                    .filter((value): value is string => Boolean(value))
+                : [];
+              const favoriteMatchIds = new Set([
+                favoriteRecipe?._id,
+                ...favoriteTranslationIds,
+              ]);
+
+              return [...recipeMatchIds].some((id) => favoriteMatchIds.has(id));
+            }
+          )
+        );
       } catch {
         setIsFavorite(false);
       }
     }
     fetchFavorite();
-  }, [language, recipeId]);
-
-  useEffect(() => {
-    if (user && authorId) {
-      setIsAuthor(user?._id === authorId);
-    } else {
-      setIsAuthor(false);
-    }
-  }, [user, authorId]);
+  }, [language, recipeId, recipeMatchIds, user]);
 
   const handleToggleFavorite = async () => {
+    if (!recipeId) {
+      return;
+    }
+
     setLoadingFavorite(true);
     try {
       if (isFavorite) {
@@ -79,33 +113,35 @@ export const RecipeActions: FC<RecipeActionsProps> = ({
 
   return (
     <div className="flex gap-2">
-      <Tooltip>
-        <TooltipTrigger asChild>
-          <Button
-            className="cursor-pointer"
-            variant="outline"
-            size="icon"
-            aria-label={
-              isFavorite
-                ? actionsDict.removeFromFavorites
-                : actionsDict.addToFavorites
-            }
-            onClick={handleToggleFavorite}
-            disabled={loadingFavorite}
-          >
-            <Heart
-              className={`w-5 h-5 ${
-                isFavorite ? 'text-pink-500 fill-pink-500' : ''
-              }`}
-            />
-          </Button>
-        </TooltipTrigger>
-        <TooltipContent side="top">
-          {isFavorite
-            ? actionsDict.removeFromFavorites
-            : actionsDict.addToFavorites}
-        </TooltipContent>
-      </Tooltip>
+      {user && (
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              className="cursor-pointer"
+              variant="outline"
+              size="icon"
+              aria-label={
+                isFavorite
+                  ? actionsDict.removeFromFavorites
+                  : actionsDict.addToFavorites
+              }
+              onClick={handleToggleFavorite}
+              disabled={loadingFavorite}
+            >
+              <Heart
+                className={`w-5 h-5 ${
+                  isFavorite ? 'text-pink-500 fill-pink-500' : ''
+                }`}
+              />
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent side="top">
+            {isFavorite
+              ? actionsDict.removeFromFavorites
+              : actionsDict.addToFavorites}
+          </TooltipContent>
+        </Tooltip>
+      )}
       <Tooltip open={isCopyTooltipOpen} onOpenChange={setIsCopyTooltipOpen}>
         <TooltipTrigger asChild>
           <Button

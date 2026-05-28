@@ -5,7 +5,8 @@ export interface RecipeTranslationRef {
 }
 
 export interface Recipe {
-  _id: string;
+  _id?: string;
+  id?: string;
   slug: string;
   title: string;
   country?: string;
@@ -43,4 +44,5 @@ export interface Recipe {
     updatedAt?: string;
     hash?: string;
   };
+  translations?: RecipeTranslationRef[];
 }
