@@ -11,12 +11,12 @@ interface Props {
 }
 
 const CreateRecipePage = async ({ params }: Props) => {
-  const user = (await getAuthenticatedUser()) as User | null;
   const { language } = await params;
+  const user = (await getAuthenticatedUser()) as User | null;
   const dict = await getDictionary(language, 'create-recipe');
   const formDict = await getDictionary(language, 'recipe-form');
   return (
-    <PrivatePage user={user}>
+    <PrivatePage user={user} language={language}>
       <div className="bg-muted min-h-[calc(100vh-8rem)] w-full">
         <div className="py-8 max-w-5xl mx-auto px-2 md:px-0">
           <Card className="bg-background max-w-2xl mx-auto p-8">

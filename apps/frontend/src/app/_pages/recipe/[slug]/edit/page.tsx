@@ -19,7 +19,7 @@ export default async function EditRecipePage({
   const formDict = await getDictionary(language, 'recipe-form');
 
   return (
-    <PrivatePage user={user}>
+    <PrivatePage user={user} language={language}>
       <div className="bg-muted min-h-[calc(100vh-8rem)] px-1 py-8">
         <Card className="bg-background max-w-2xl mx-auto p-8">
           <h1 className="text-2xl font-bold text-center">Edit Recipe</h1>

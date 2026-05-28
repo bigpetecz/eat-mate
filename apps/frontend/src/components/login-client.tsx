@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { getLocalizedRoute, Locale } from '@/i18n';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import apiClient from '@/app/api-client';
 import { toApiClientError } from '@/lib/api-error';
 
@@ -23,6 +23,7 @@ export function LoginFormClient({
   ...props
 }: React.ComponentProps<'div'> & { dictionary: Record<string, string> }) {
   const params = useParams();
+  const router = useRouter();
   const language =
     typeof params?.language === 'string' ? params.language : 'en';
   const [email, setEmail] = useState('');
@@ -42,7 +43,8 @@ export function LoginFormClient({
       const fallbackPath = getLocalizedRoute('homepage', language as Locale);
       const redirectPath =
         state && state.startsWith('/') ? state : fallbackPath;
-      window.location.replace(redirectPath);
+      router.replace(redirectPath);
+      router.refresh();
     } catch (error) {
       const apiError = toApiClientError(error);
       setServerError(

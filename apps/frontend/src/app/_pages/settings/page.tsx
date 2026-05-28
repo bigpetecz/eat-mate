@@ -11,11 +11,11 @@ interface Props {
 }
 
 const SettingsPage = async ({ params }: Props) => {
-  const user = (await getAuthenticatedUser()) as User | null;
   const { language } = await params;
+  const user = (await getAuthenticatedUser()) as User | null;
   const dict = await getDictionary(language, 'settings');
   return (
-    <PrivatePage user={user}>
+    <PrivatePage user={user} language={language}>
       <div className="bg-muted min-h-[calc(100vh-8rem)]">
         <div className="flex w-full justify-center py-10 px-1">
           <Card className="w-full max-w-xl p-6 md:p-10 bg-background">

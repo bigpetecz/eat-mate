@@ -1,32 +1,21 @@
-'use client';
-import { useEffect } from 'react';
 import { ReactNode } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { redirect } from 'next/navigation';
 import { User } from '@/app/auth/authStore';
-import { Spinner } from '../ui/spinner';
 import { getLocalizedRoute, Locale } from '@/i18n';
 
 interface PrivatePageProps {
   user: User | null;
+  language: Locale;
   children: ReactNode;
 }
 
-export default function PrivatePage({ user, children }: PrivatePageProps) {
-  const router = useRouter();
-  const { language = 'en' } = useParams();
-
-  useEffect(() => {
-    if (user === null) {
-      router.replace(getLocalizedRoute('login', language as Locale));
-    }
-  }, [user, router]);
-
+export default function PrivatePage({
+  user,
+  language,
+  children,
+}: PrivatePageProps) {
   if (user === null) {
-    return (
-      <div className="flex items-center justify-center bg-muted min-h-[calc(100vh-8rem)] w-full">
-        <Spinner />
-      </div>
-    );
+    redirect(getLocalizedRoute('login', language));
   }
 
   return <>{children}</>;
