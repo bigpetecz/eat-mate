@@ -8,6 +8,9 @@ on:
       - develop
   pull_request:
 
+env:
+  NX_NO_CLOUD: true
+
 jobs:
   frontend-quality:
     name: Frontend Lint Typecheck Test
@@ -28,3 +31,23 @@ jobs:
 
       - name: Run frontend quality checks
         run: npm run ci:frontend
+
+  api-build:
+    name: API Build
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build API
+        run: NX_TUI=false npx nx run @eat-mate/api:build

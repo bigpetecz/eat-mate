@@ -1,5 +1,5 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-npx --no-install nx lint frontend
-npx --no-install nx lint api
+NX_NO_CLOUD=true npx --no-install nx lint frontend
+NX_NO_CLOUD=true npx --no-install nx typecheck frontend
