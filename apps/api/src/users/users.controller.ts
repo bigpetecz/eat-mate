@@ -44,6 +44,7 @@ export class UsersController {
     displayName: string;
     theme: string;
     gender: 'male' | 'female' | null;
+    language: 'en' | 'cs';
   }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;

@@ -6,4 +6,5 @@ export class UserProfileDto {
   theme: 'auto' | 'light' | 'dark';
   picture?: string;
   gender?: 'male' | 'female' | null;
+  language: 'en' | 'cs';
 }

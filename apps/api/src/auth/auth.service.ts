@@ -35,6 +35,7 @@ export class AuthService {
       theme: user.theme,
       picture: user.picture,
       gender: user.gender,
+      language: user.language || 'en',
     };
   }
 

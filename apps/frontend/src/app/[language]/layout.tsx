@@ -1,4 +1,3 @@
-import '../globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Analytics } from '@vercel/analytics/next';
 import { ThemeProvider } from 'next-themes';

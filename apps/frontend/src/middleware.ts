@@ -8,6 +8,11 @@ const defaultLocale = 'en';
 
 // Get the preferred locale, similar to the above or using a library
 function getLocale(request: NextRequest) {
+  const localeCookie = request.cookies.get('locale')?.value;
+  if (localeCookie && locales.includes(localeCookie)) {
+    return localeCookie;
+  }
+
   const acceptLanguage = request.headers.get('accept-language');
   let languages: Array<string> = [];
   if (acceptLanguage) {

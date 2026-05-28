@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { FormEvent, useState } from 'react';
-import { getLocalizedRoute, Locale } from '@/i18n';
+import { getLocalizedRoute, i18n, Locale, resolveLocalizedPath } from '@/i18n';
 import { useParams, useRouter } from 'next/navigation';
 import apiClient from '@/app/api-client';
 import { toApiClientError } from '@/lib/api-error';
@@ -31,18 +31,47 @@ export function LoginFormClient({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [serverError, setServerError] = useState<string | null>(null);
 
+  const isAuthRoute = (path: string, locale: Locale) => {
+    const authRoutes = [
+      getLocalizedRoute('login', locale),
+      getLocalizedRoute('signUp', locale),
+    ];
+
+    return authRoutes.some(
+      (route) => path === route || path.startsWith(`${route}?`)
+    );
+  };
+
   const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setServerError(null);
     setIsSubmitting(true);
 
     try {
-      await apiClient.post('/auth/login', { email, password });
+      const { data } = await apiClient.post<{
+        user?: {
+          language?: 'en' | 'cs';
+        };
+      }>('/auth/login', { email, password });
+
+      const preferredLocale = i18n.locales.includes(
+        data?.user?.language as Locale
+      )
+        ? (data?.user?.language as Locale)
+        : (language as Locale);
+
+      document.cookie = `locale=${preferredLocale}; path=/; max-age=31536000; samesite=lax`;
 
       const state = new URLSearchParams(window.location.search).get('state');
-      const fallbackPath = getLocalizedRoute('homepage', language as Locale);
-      const redirectPath =
-        state && state.startsWith('/') ? state : fallbackPath;
+      const requestedPath = state && state.startsWith('/') ? state : null;
+      const fallbackPath = getLocalizedRoute('homepage', preferredLocale);
+      const localizedPath = requestedPath
+        ? resolveLocalizedPath(requestedPath, preferredLocale)
+        : fallbackPath;
+      const redirectPath = isAuthRoute(localizedPath, preferredLocale)
+        ? fallbackPath
+        : localizedPath;
+
       router.replace(redirectPath);
       router.refresh();
     } catch (error) {
@@ -59,8 +88,13 @@ export function LoginFormClient({
   };
 
   const handleGoogleLogin = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const existingState = urlParams.get('state');
+    const fallbackPath = getLocalizedRoute('homepage', language as Locale);
     const state = encodeURIComponent(
-      `${window.location.pathname}${window.location.search}`
+      existingState && existingState.startsWith('/')
+        ? existingState
+        : fallbackPath
     );
     window.location.assign(`/api/auth/google?state=${state}`);
   };

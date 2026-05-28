@@ -12,4 +12,8 @@ export class UpdateUserSettingsDto {
   @IsOptional()
   @IsIn(['male', 'female', null])
   gender?: 'male' | 'female' | null;
+
+  @IsOptional()
+  @IsIn(['en', 'cs'])
+  language?: 'en' | 'cs';
 }

@@ -38,6 +38,9 @@ export class User extends Document {
 
   @Prop({ type: String, enum: ['male', 'female', null], default: null })
   gender: 'male' | 'female' | null;
+
+  @Prop({ type: String, enum: ['en', 'cs'], default: 'en' })
+  language: 'en' | 'cs';
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

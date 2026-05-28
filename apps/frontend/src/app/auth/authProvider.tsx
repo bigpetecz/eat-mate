@@ -20,7 +20,12 @@ export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const setUser = useAuthStore((s) => s.setUser);
 
   useEffect(() => {
-    setUser(normalizeInitialUser(initialUser));
+    const normalizedUser = normalizeInitialUser(initialUser);
+    setUser(normalizedUser);
+
+    if (normalizedUser?.language) {
+      document.cookie = `locale=${normalizedUser.language}; path=/; max-age=31536000; samesite=lax`;
+    }
   }, [initialUser, setUser]);
 
   return <>{children}</>;

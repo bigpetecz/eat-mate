@@ -42,6 +42,7 @@ export class UsersService {
     displayName: string;
     theme: string;
     gender: 'male' | 'female' | null;
+    language: 'en' | 'cs';
   }> {
     const userDoc = await this.userModel.findById(user.userId).exec();
     if (!userDoc) {
@@ -58,6 +59,10 @@ export class UsersService {
 
     if (dto.gender !== undefined) {
       userDoc.gender = dto.gender;
+    }
+
+    if (dto.language !== undefined) {
+      userDoc.language = dto.language;
     }
 
     try {
@@ -82,6 +87,7 @@ export class UsersService {
       displayName: userDoc.displayName,
       theme: userDoc.theme,
       gender: userDoc.gender,
+      language: userDoc.language || 'en',
     };
   }
 

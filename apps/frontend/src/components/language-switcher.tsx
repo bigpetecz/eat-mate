@@ -7,6 +7,8 @@ import {
   type Locale,
   resolveLocalizedPath,
 } from '../i18n';
+import { useAuthStore } from '@/app/auth/authStore';
+import { apiClient } from '@/app/api-client';
 import {
   Select,
   SelectTrigger,
@@ -24,6 +26,8 @@ export function LanguageSwitcher() {
   const router = useRouter();
   const params = useParams();
   const pathname = usePathname();
+  const user = useAuthStore((s) => s.user);
+  const setUser = useAuthStore((s) => s.setUser);
 
   const resolveRecipeTranslationSlug = async (
     language: string,
@@ -74,6 +78,17 @@ export function LanguageSwitcher() {
   const handleChange = async (value: string) => {
     const locale = value as Locale;
     if (!i18n.locales.includes(locale)) return;
+
+    document.cookie = `locale=${locale}; path=/; max-age=31536000; samesite=lax`;
+
+    if (user) {
+      try {
+        await apiClient.put('users/settings', { language: locale });
+        setUser({ ...user, language: locale });
+      } catch {
+        // Keep navigation responsive even if persistence fails.
+      }
+    }
 
     const languageParam =
       typeof params?.language === 'string' ? params.language : null;
