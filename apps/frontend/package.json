@@ -55,6 +55,22 @@
           "buildTarget": "frontend:build",
           "dev": true
         }
+      },
+      "typecheck": {
+        "executor": "nx:run-commands",
+        "options": {
+          "command": "tsc -p apps/frontend/tsconfig.json --noEmit"
+        }
+      },
+      "test": {
+        "executor": "@nx/jest:jest",
+        "outputs": [
+          "{workspaceRoot}/coverage/{projectRoot}"
+        ],
+        "options": {
+          "jestConfig": "apps/frontend/jest.config.ts",
+          "passWithNoTests": true
+        }
       }
     }
   }
