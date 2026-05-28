@@ -8,7 +8,6 @@ import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { IngredientSchema } from '../ingredients/schema/ingredient.schema';
 import { IngredientVariantSchema } from '../ingredients/schema/ingredient-variant.schema';
 import { RecipeAiAuditService } from './service/recipe-ai-audit.service';
-import { ScheduleModule } from '@nestjs/schedule';
 import { OpenAIService } from '../openai/openai.service';
 import { IngredientNormalizerService } from '../ingredients/service/ingredient-normalizer.service';
 import { RecipesQueryService } from './service/recipes-query.service';
@@ -24,7 +23,6 @@ import { RecipesQueryService } from './service/recipes-query.service';
       { name: 'IngredientVariant', schema: IngredientVariantSchema },
     ]),
     CloudinaryModule,
-    ScheduleModule.forRoot(),
   ],
   controllers: [RecipesController],
   providers: [

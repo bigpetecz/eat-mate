@@ -1,0 +1,22 @@
+name: Keep Render API Awake
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping-api:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping API health endpoint
+        env:
+          KEEP_ALIVE_API_URL: ${{ secrets.KEEP_ALIVE_API_URL }}
+        run: |
+          if [ -z "$KEEP_ALIVE_API_URL" ]; then
+            echo "KEEP_ALIVE_API_URL secret is not set"
+            exit 1
+          fi
+
+          echo "Pinging $KEEP_ALIVE_API_URL"
+          curl --fail --silent --show-error --max-time 20 "$KEEP_ALIVE_API_URL"

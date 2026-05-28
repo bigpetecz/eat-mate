@@ -1,5 +1,4 @@
 import { Module } from '@nestjs/common';
-import { ScheduleModule } from '@nestjs/schedule';
 import { MongooseModule } from '@nestjs/mongoose';
 import { GoogleTranslateService } from './google-translate.service';
 import { TranslationScheduler } from './translation.scheduler';
@@ -15,7 +14,6 @@ import {
 
 @Module({
   imports: [
-    ScheduleModule.forRoot(),
     MongooseModule.forFeature([
       { name: Recipe.name, schema: RecipeSchema },
       { name: TranslationUsage.name, schema: TranslationUsageSchema },

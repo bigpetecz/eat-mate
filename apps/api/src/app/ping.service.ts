@@ -15,16 +15,18 @@ export class PingService {
 
   @Cron(CronExpression.EVERY_10_MINUTES)
   async scheduledPing() {
-    const frontendUrl = this.configService.get('FRONTEND_URL');
-    if (frontendUrl === undefined) {
-      this.logger.warn('FRONTEND_URL is not set, skipping ping');
+    const keepAliveUrl = this.configService.get<string>('KEEP_ALIVE_API_URL');
+
+    if (!keepAliveUrl) {
+      this.logger.warn('KEEP_ALIVE_API_URL is not set, skipping ping');
       return;
     }
+
     try {
-      const res = await firstValueFrom(this.http.get(frontendUrl));
-      this.logger.log(`Pinged ${frontendUrl}: ${res.status}`);
+      const res = await firstValueFrom(this.http.get(keepAliveUrl));
+      this.logger.log(`Pinged ${keepAliveUrl}: ${res.status}`);
     } catch (err) {
-      this.logger.warn(`Ping to ${frontendUrl} failed: ${err}`);
+      this.logger.warn(`Ping to ${keepAliveUrl} failed: ${String(err)}`);
     }
   }
 }
