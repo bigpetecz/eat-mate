@@ -1,15 +1,9 @@
 'use client';
 
 import { NutritionBar } from '@/components/recipe/nutrition-bar';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Recipe } from '@/types/recipe';
-import { FC, useState } from 'react';
+import { FC, useEffect, useState } from 'react';
 
 interface NutritionsProps {
   recipe: Recipe;
@@ -44,22 +38,42 @@ export const Nutritions: FC<NutritionsProps> = ({
     },
   };
   const dailyValues = DAILY_VALUES_BY_GENDER[gender];
+
+  useEffect(() => {
+    if (userGender) {
+      setGender(userGender);
+    }
+  }, [userGender]);
+
   return (
     <div className="w-full md:pr-6">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="font-medium mb-2">{dict.nutritionPerServing}</h3>
-        <Select
-          value={gender}
-          onValueChange={(value) => setGender(value as 'male' | 'female')}
-        >
-          <SelectTrigger className="w-28">
-            <SelectValue placeholder="Gender" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="male">{dict.male || 'Male'}</SelectItem>
-            <SelectItem value="female">{dict.female || 'Female'}</SelectItem>
-          </SelectContent>
-        </Select>
+      <div className="mb-4 space-y-2">
+        <h3 className="font-medium">{dict.nutritionPerServing}</h3>
+        <div className="flex items-center gap-2 text-sm">
+          <span className="text-muted-foreground">Based on</span>
+          <div className="inline-flex rounded-lg border bg-background p-1 shadow-sm">
+            <Button
+              type="button"
+              size="sm"
+              variant={gender === 'male' ? 'secondary' : 'ghost'}
+              className="h-7 px-3"
+              onClick={() => setGender('male')}
+              aria-pressed={gender === 'male'}
+            >
+              {dict.male || 'Male'}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant={gender === 'female' ? 'secondary' : 'ghost'}
+              className="h-7 px-3"
+              onClick={() => setGender('female')}
+              aria-pressed={gender === 'female'}
+            >
+              {dict.female || 'Female'}
+            </Button>
+          </div>
+        </div>
       </div>
       <div>
         {recipe.ai?.nutrition?.calories != null && (
