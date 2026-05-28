@@ -1,4 +1,5 @@
 export class UserProfileDto {
+  _id: string;
   id: string;
   email: string;
   displayName: string;

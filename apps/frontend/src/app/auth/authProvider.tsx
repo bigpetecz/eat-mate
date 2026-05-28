@@ -1,40 +1,27 @@
-import { ReactNode, useEffect, useState } from 'react';
+'use client';
+
+import { ReactNode, useEffect } from 'react';
 import { useAuthStore } from './authStore';
+import { User } from './authStore';
 
 interface AuthProviderProps {
+  initialUser: User | null;
   children: ReactNode;
 }
 
-export function AuthProvider({ children }: AuthProviderProps) {
+export function normalizeInitialUser(user: User | null): User | null {
+  if (user && !user._id && user.id) {
+    return { ...user, _id: user.id };
+  }
+  return user;
+}
+
+export function AuthProvider({ children, initialUser }: AuthProviderProps) {
   const setUser = useAuthStore((s) => s.setUser);
-  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    async function fetchUser() {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' });
-        if (res.ok) {
-          const user = await res.json();
-          setUser(user);
-        } else {
-          setUser(null);
-        }
-      } catch {
-        setUser(null);
-      } finally {
-        setLoading(false);
-      }
-    }
-    fetchUser();
-  }, [setUser]);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <span>Loading...</span>
-      </div>
-    );
-  }
+    setUser(normalizeInitialUser(initialUser));
+  }, [initialUser, setUser]);
 
   return <>{children}</>;
 }

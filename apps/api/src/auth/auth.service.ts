@@ -26,8 +26,10 @@ export class AuthService {
   ) {}
 
   private mapToSafeUser(user: User): UserProfileDto {
+    const id = String(user._id);
     return {
-      id: String(user._id),
+      _id: id,
+      id,
       email: user.email,
       displayName: user.displayName,
       theme: user.theme,

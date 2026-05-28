@@ -2,7 +2,6 @@
 
 import { Suspense, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuthStore } from '../../../auth/authStore';
 import { Spinner } from '@/components/ui/spinner';
 
 export default function AuthCallbackPage() {
@@ -16,12 +15,12 @@ export default function AuthCallbackPage() {
 function AuthCallbackInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const setUser = useAuthStore((s) => s.setUser);
 
   useEffect(() => {
     const state = searchParams.get('state') || '/';
-    router.replace(state);
-  }, [router, searchParams, setUser]);
+    const safeState = state.startsWith('/') ? state : '/';
+    router.replace(safeState);
+  }, [router, searchParams]);
 
   return (
     <div className="flex items-center justify-center min-h-screen">

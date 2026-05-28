@@ -2,7 +2,7 @@
 
 import { Sheet, SheetTrigger, SheetContent } from '@/components/ui/sheet';
 import { Button } from '@/components/ui/button';
-import { FC, useEffect, useState } from 'react';
+import { FC, useState } from 'react';
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import {
@@ -16,39 +16,64 @@ import {
   PencilIcon,
 } from 'lucide-react';
 import { DialogTitle } from '@/components/ui/dialog';
-import { User } from '@/app/auth/authStore';
-import { apiClient } from '@/app/api-client';
+import { useAuthStore } from '@/app/auth/authStore';
+import { getLocalizedRoute, Locale } from '@/i18n';
 
 export const MobileMenu: FC = () => {
   const [open, setOpen] = useState(false);
   const params = useParams();
   const language =
-    typeof params?.language === 'string' ? params.language : 'en';
+    typeof params?.language === 'string' ? (params.language as Locale) : 'en';
 
   const mainItems = [
-    { title: 'Add Recipe', icon: Plus, url: `/${language}/recipe/create` },
-    { title: 'Discover Recipes', url: `/${language}/discover` },
+    {
+      title: 'Add Recipe',
+      icon: Plus,
+      url: getLocalizedRoute('recipeCreate', language),
+    },
+    {
+      title: 'Discover Recipes',
+      url: getLocalizedRoute('discover', language, {}),
+    },
   ];
 
   const userItems = [
-    { title: 'My Recipes', icon: PencilIcon, url: `/${language}/my-recipes` },
-    { title: 'Favorite recipes', icon: Heart, url: `/${language}/favorites` },
-    { title: 'Settings', icon: Settings, url: `/${language}/settings` },
-    { title: 'Logout', icon: LogOut, url: `/${language}/logout` },
+    {
+      title: 'My Recipes',
+      icon: PencilIcon,
+      url: getLocalizedRoute('myRecipes', language),
+    },
+    {
+      title: 'Favorite recipes',
+      icon: Heart,
+      url: getLocalizedRoute('favorites', language),
+    },
+    {
+      title: 'Settings',
+      icon: Settings,
+      url: getLocalizedRoute('userSettings', language),
+    },
+    {
+      title: 'Logout',
+      icon: LogOut,
+      url: getLocalizedRoute('logout', language),
+    },
   ];
 
   const anonymousItems = [
-    { title: 'Login', icon: LogInIcon, url: `/${language}/sign-in` },
-    { title: 'Sign Up', icon: Book, url: `/${language}/sign-up` },
+    {
+      title: 'Login',
+      icon: LogInIcon,
+      url: getLocalizedRoute('login', language),
+    },
+    {
+      title: 'Sign Up',
+      icon: Book,
+      url: getLocalizedRoute('signUp', language),
+    },
   ];
 
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    apiClient.get<User>('/auth/me').then((res) => {
-      setUser(res.data);
-    });
-  }, []);
+  const user = useAuthStore((s) => s.user);
 
   const handleClose = () => setOpen(false);
 

@@ -10,7 +10,6 @@ import {
   DropdownMenuItem,
 } from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User } from '@/app/auth/authStore';
 import {
   BookIcon,
   HeartIcon,
@@ -18,11 +17,11 @@ import {
   PencilIcon,
   SettingsIcon,
 } from 'lucide-react';
-import { FC, useEffect, useState } from 'react';
+import { FC, useEffect } from 'react';
 import { useTheme } from 'next-themes';
 import { useParams } from 'next/navigation';
 import { getLocalizedRoute, Locale } from '@/i18n';
-import { apiClient } from '@/app/api-client';
+import { useAuthStore } from '@/app/auth/authStore';
 
 interface UserProps {
   commonDictionary: Record<string, string>;
@@ -34,14 +33,7 @@ export const UserMenu: FC<UserProps> = ({ commonDictionary }) => {
   const language = (
     typeof params?.language === 'string' ? params.language : 'en'
   ) as Locale;
-  const [user, setUser] = useState<User | null>(null);
-
-  useEffect(() => {
-    apiClient
-      .get<User>('/auth/me')
-      .then((res) => setUser(res.data))
-      .catch(() => setUser(null));
-  }, []);
+  const user = useAuthStore((s) => s.user);
 
   useEffect(() => {
     setTheme((user?.theme === 'auto' ? 'system' : user?.theme) || 'system');
