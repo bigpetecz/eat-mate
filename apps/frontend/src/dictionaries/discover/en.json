@@ -83,6 +83,8 @@
     "Register": "Register",
     "Profile": "Profile",
     "Logout": "Logout",
+    "noRecipesFound": "No recipes found. Try adjusting your filters.",
+    "failedToLoadRecipes": "Failed to load recipes.",
     "headline": "Browse delicious ideas below, or adjust filters to find your perfect meal."
   }
 }

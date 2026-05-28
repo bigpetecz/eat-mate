@@ -13,9 +13,11 @@ import Link from 'next/link';
 import { getLocalizedRoute, Locale } from '@/i18n';
 import { getDictionary } from '@/dictionaries/dictionaries';
 import { apiClient } from '../api-client';
+import type { Recipe } from '@/types/recipe';
+import { toApiClientError } from '@/lib/api-error';
 
 export default function HomePage() {
-  const [recipes, setRecipes] = useState<any[]>([]); // TODO: Replace any with Recipe type
+  const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [dictionary, setDictionary] = useState<Record<string, string>>();
@@ -46,12 +48,26 @@ export default function HomePage() {
   }, [language]);
 
   useEffect(() => {
-    apiClient
-      .get(`/recipes/${language}`)
-      .then((res) => setRecipes(res.data))
-      .catch((err) => setError('Failed to load recipes'))
-      .finally(() => setLoading(false));
-  }, []);
+    const fetchRecipes = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const res = await apiClient.get<Recipe[]>(`/recipes/${language}`);
+        setRecipes(Array.isArray(res.data) ? res.data : []);
+      } catch (err) {
+        const apiError = toApiClientError(err);
+        setError(
+          apiError.message ||
+            dictionary?.failedToLoadRecipes ||
+            'Failed to load recipes.'
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRecipes();
+  }, [language, dictionary?.failedToLoadRecipes]);
 
   return (
     <div className="flex flex-col bg-muted">
@@ -67,10 +83,19 @@ export default function HomePage() {
           <div className="w-full max-w-5xl overflow-hidden">
             {loading ? (
               <div className="flex items-center justify-center min-h-[20rem]">
-                <Spinner />
+                <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                  <Spinner />
+                  <span className="text-sm">
+                    {dictionary?.loadingRecipes || 'Loading recipes...'}
+                  </span>
+                </div>
               </div>
             ) : error ? (
               <div className="text-destructive py-12">{error}</div>
+            ) : recipes.length === 0 ? (
+              <div className="text-muted-foreground py-12">
+                {dictionary?.noRecipesFound || 'No recipes found.'}
+              </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 {recipes.slice(0, 3).map((recipe) => (

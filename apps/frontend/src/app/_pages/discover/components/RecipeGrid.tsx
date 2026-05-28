@@ -7,14 +7,27 @@ interface RecipeGridProps {
   recipes: Recipe[];
   loading: boolean;
   error: string | null;
+  loadingText?: string;
+  emptyText?: string;
 }
 
-export const RecipeGrid = ({ recipes, loading, error }: RecipeGridProps) => (
+export const RecipeGrid = ({
+  recipes,
+  loading,
+  error,
+  loadingText,
+  emptyText,
+}: RecipeGridProps) => (
   <div className="max-w-5xl mx-auto px-2 md:px-0 py-10">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       {loading ? (
         <div className="col-span-full flex justify-center items-center py-12">
-          <Spinner />
+          <div className="flex flex-col items-center gap-2 text-muted-foreground">
+            <Spinner />
+            <span className="text-sm">
+              {loadingText || 'Loading recipes...'}
+            </span>
+          </div>
         </div>
       ) : error ? (
         <div className="col-span-full text-center py-12 text-destructive">
@@ -22,7 +35,7 @@ export const RecipeGrid = ({ recipes, loading, error }: RecipeGridProps) => (
         </div>
       ) : recipes.length === 0 ? (
         <Card className="col-span-full text-center py-12 text-muted-foreground">
-          No recipes found. Try adjusting your filters.
+          {emptyText || 'No recipes found. Try adjusting your filters.'}
         </Card>
       ) : (
         recipes.map((recipe) => <RecipeCard key={recipe._id} recipe={recipe} />)

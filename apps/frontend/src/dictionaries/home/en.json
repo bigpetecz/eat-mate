@@ -2,5 +2,8 @@
   "title": "Discover Your Next Favorite Recipe",
   "subtitle": "Cook smarter, filter better, enjoy more.",
   "search": "Search",
-  "searchPlaceholder": "What do you want to cook?"
+  "searchPlaceholder": "What do you want to cook?",
+  "loadingRecipes": "Loading recipes...",
+  "failedToLoadRecipes": "Failed to load recipes.",
+  "noRecipesFound": "No recipes found."
 }

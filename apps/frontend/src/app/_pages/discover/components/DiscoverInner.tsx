@@ -3,6 +3,8 @@ import { FC } from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
 import type { Recipe } from '@/types/recipe';
+import { apiClient } from '@/app/api-client';
+import { toApiClientError } from '@/lib/api-error';
 import { FiltersCard } from './FiltersCard';
 import { Headline } from './Headline';
 import { RecipeGrid } from './RecipeGrid';
@@ -11,21 +13,38 @@ interface DiscoverInnerProps {
   dictionary: Record<string, string>;
 }
 
+interface DiscoverFilters {
+  search: string;
+  mealType: string;
+  diets: string[];
+  techniques: string[];
+  difficulty: string;
+  country: string;
+  cookTime: [number, number];
+  calories: [number, number];
+  estimatedCost: [number, number];
+  specialAttributes: string[];
+}
+
 export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
   const { language } = useParams();
   const searchParams = useSearchParams();
 
-  const getDefaultValuesFromParams = () => {
+  const getDefaultValuesFromParams = (): DiscoverFilters => {
     const getArray = (key: string) => {
       const val = searchParams.get(key);
       if (!val) return [];
       return val.split(',').filter(Boolean);
     };
-    const getRange = (key: string, defMin: number, defMax: number) => {
+    const getRange = (
+      key: string,
+      defMin: number,
+      defMax: number
+    ): [number, number] => {
       const min = Number(searchParams.get(key + 'Min') ?? defMin);
       const max = Number(searchParams.get(key + 'Max') ?? defMax);
 
-      return [min, max];
+      return [min, max] as [number, number];
     };
     return {
       search: searchParams.get('search') || '',
@@ -47,56 +66,51 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchRecipes = useCallback(async (filters: any) => {
-    setLoading(true);
-    setError(null);
-    try {
-      const params = new URLSearchParams({
-        ...(filters.search && { search: filters.search as string }),
-        ...(filters.mealType && { mealType: filters.mealType as string }),
-        ...(filters.diets &&
-          (filters.diets as string[]).length && {
-            diets: (filters.diets as string[]).join(','),
-          }),
-        ...(filters.techniques &&
-          (filters.techniques as string[]).length && {
-            techniques: (filters.techniques as string[]).join(','),
-          }),
-        ...(filters.difficulty && {
-          difficulty: filters.difficulty as string,
-        }),
-        ...(filters.country && { country: filters.country as string }),
-        cookTimeMin: (filters.cookTime as number[])[0]?.toString() ?? '0',
-        cookTimeMax: (filters.cookTime as number[])[1]?.toString() ?? '240',
-        caloriesMin: (filters.calories as number[])[0]?.toString() ?? '0',
-        caloriesMax: (filters.calories as number[])[1]?.toString() ?? '2000',
-        estimatedCostMin:
-          (filters.estimatedCost as number[])[0]?.toString() ?? '0',
-        estimatedCostMax:
-          (filters.estimatedCost as number[])[1]?.toString() ?? '30',
-        ...(filters.specialAttributes &&
-          (filters.specialAttributes as string[]).length && {
-            specialAttributes: (filters.specialAttributes as string[]).join(
-              ','
-            ),
-          }),
-      });
-      const res = await fetch(
-        `/api/recipes/${language}/filter?${params.toString()}`
-      );
-      if (!res.ok) throw new Error('Failed to fetch recipes');
-      const data = await res.json();
-      setRecipes(data);
-    } catch (e: unknown) {
-      if (e instanceof Error) {
-        setError(e.message);
-      } else {
-        setError('Unknown error');
+  const buildSearchParams = (filters: DiscoverFilters) => {
+    return new URLSearchParams({
+      ...(filters.search && { search: filters.search }),
+      ...(filters.mealType && { mealType: filters.mealType }),
+      ...(filters.diets.length && { diets: filters.diets.join(',') }),
+      ...(filters.techniques.length && {
+        techniques: filters.techniques.join(','),
+      }),
+      ...(filters.difficulty && { difficulty: filters.difficulty }),
+      ...(filters.country && { country: filters.country }),
+      cookTimeMin: filters.cookTime[0].toString(),
+      cookTimeMax: filters.cookTime[1].toString(),
+      caloriesMin: filters.calories[0].toString(),
+      caloriesMax: filters.calories[1].toString(),
+      estimatedCostMin: filters.estimatedCost[0].toString(),
+      estimatedCostMax: filters.estimatedCost[1].toString(),
+      ...(filters.specialAttributes.length && {
+        specialAttributes: filters.specialAttributes.join(','),
+      }),
+    });
+  };
+
+  const fetchRecipes = useCallback(
+    async (filters: DiscoverFilters) => {
+      setLoading(true);
+      setError(null);
+      try {
+        const params = buildSearchParams(filters);
+        const res = await apiClient.get<Recipe[]>(
+          `/recipes/${language}/filter?${params.toString()}`
+        );
+        setRecipes(Array.isArray(res.data) ? res.data : []);
+      } catch (e: unknown) {
+        const apiError = toApiClientError(e);
+        setError(
+          apiError.message ||
+            dictionary.failedToLoadRecipes ||
+            'Failed to load recipes.'
+        );
+      } finally {
+        setLoading(false);
       }
-    } finally {
-      setLoading(false);
-    }
-  }, []);
+    },
+    [dictionary.failedToLoadRecipes, language]
+  );
 
   // Fetch recipes on mount (with current filters, debounced)
   useEffect(() => {
@@ -116,7 +130,7 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
   }, [defaultValues.search]);
 
   // Helper to update URL with all filters
-  const updateUrlWithFilters = (filters: any) => {
+  const updateUrlWithFilters = (filters: DiscoverFilters) => {
     const params = new URLSearchParams();
     if (filters.search) params.set('search', filters.search);
     if (filters.mealType) params.set('mealType', filters.mealType);
@@ -130,27 +144,41 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
       filters.cookTime &&
       (filters.cookTime[0] !== 0 || filters.cookTime[1] !== 240)
     ) {
-      params.set('cookTimeMin', filters.cookTime[0]);
-      params.set('cookTimeMax', filters.cookTime[1]);
+      params.set('cookTimeMin', filters.cookTime[0].toString());
+      params.set('cookTimeMax', filters.cookTime[1].toString());
     }
     if (
       filters.calories &&
       (filters.calories[0] !== 0 || filters.calories[1] !== 2000)
     ) {
-      params.set('caloriesMin', filters.calories[0]);
-      params.set('caloriesMax', filters.calories[1]);
+      params.set('caloriesMin', filters.calories[0].toString());
+      params.set('caloriesMax', filters.calories[1].toString());
+    }
+    if (
+      filters.estimatedCost &&
+      (filters.estimatedCost[0] !== 0 || filters.estimatedCost[1] !== 30)
+    ) {
+      params.set('estimatedCostMin', filters.estimatedCost[0].toString());
+      params.set('estimatedCostMax', filters.estimatedCost[1].toString());
+    }
+    if (filters.specialAttributes && filters.specialAttributes.length) {
+      params.set('specialAttributes', filters.specialAttributes.join(','));
     }
     const url = `${window.location.pathname}?${params.toString()}`;
     window.history.replaceState({}, '', url);
   };
 
   const handleFiltersSubmit = (values: Record<string, unknown>) => {
-    updateUrlWithFilters(values);
-    fetchRecipes(values);
+    const typedValues = values as unknown as DiscoverFilters;
+    updateUrlWithFilters(typedValues);
+    fetchRecipes(typedValues);
   };
 
   const handleSearchSubmit = (values: Record<string, unknown>) => {
-    const merged = { ...defaultValues, search: values.search };
+    const merged: DiscoverFilters = {
+      ...defaultValues,
+      search: (values.search as string) || '',
+    };
     updateUrlWithFilters(merged);
     fetchRecipes(merged);
   };
@@ -165,7 +193,16 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
         dict={dictionary}
       />
       <Headline dict={dictionary} />
-      <RecipeGrid recipes={recipes} loading={loading} error={error} />
+      <RecipeGrid
+        recipes={recipes}
+        loading={loading}
+        error={error}
+        loadingText={dictionary['Loading recipes...'] || 'Loading recipes...'}
+        emptyText={
+          dictionary.noRecipesFound ||
+          'No recipes found. Try adjusting filters.'
+        }
+      />
     </div>
   );
 };

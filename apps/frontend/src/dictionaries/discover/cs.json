@@ -83,6 +83,8 @@
     "Register": "Registrovat",
     "Profile": "Profil",
     "Logout": "Odhlásit se",
+    "noRecipesFound": "Žádné recepty nebyly nalezeny. Zkuste upravit filtry.",
+    "failedToLoadRecipes": "Nepodařilo se načíst recepty.",
     "headline": "Prozkoumejte lahodné nápady níže nebo upravte filtry, abyste našli své dokonalé jídlo."
   }
 }
