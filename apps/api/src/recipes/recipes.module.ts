@@ -2,7 +2,7 @@ import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { MongooseModule } from '@nestjs/mongoose';
 import { Recipe, RecipeSchema } from './schema/recipe.schema';
-import { Unit, UnitSchema } from '../units/schema/unit.schema';
+import { UnitSchema } from '../units/schema/unit.schema';
 import { RecipesController } from './recipes.controller';
 import { CloudinaryModule } from '../cloudinary/cloudinary.module';
 import { IngredientSchema } from '../ingredients/schema/ingredient.schema';
@@ -11,6 +11,7 @@ import { RecipeAiAuditService } from './service/recipe-ai-audit.service';
 import { ScheduleModule } from '@nestjs/schedule';
 import { OpenAIService } from '../openai/openai.service';
 import { IngredientNormalizerService } from '../ingredients/service/ingredient-normalizer.service';
+import { RecipesQueryService } from './service/recipes-query.service';
 
 @Module({
   imports: [
@@ -26,6 +27,11 @@ import { IngredientNormalizerService } from '../ingredients/service/ingredient-n
     ScheduleModule.forRoot(),
   ],
   controllers: [RecipesController],
-  providers: [RecipeAiAuditService, OpenAIService, IngredientNormalizerService],
+  providers: [
+    RecipeAiAuditService,
+    OpenAIService,
+    IngredientNormalizerService,
+    RecipesQueryService,
+  ],
 })
 export class RecipesModule {}

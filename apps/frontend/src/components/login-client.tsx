@@ -14,6 +14,8 @@ import Link from 'next/link';
 import { FormEvent, useState } from 'react';
 import { getLocalizedRoute, Locale } from '@/i18n';
 import { useParams } from 'next/navigation';
+import apiClient from '@/app/api-client';
+import { toApiClientError } from '@/lib/api-error';
 
 export function LoginFormClient({
   className,
@@ -34,33 +36,20 @@ export function LoginFormClient({
     setIsSubmitting(true);
 
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email, password }),
-      });
-
-      if (!res.ok) {
-        const errorBody = (await res.json().catch(() => null)) as {
-          message?: string;
-        } | null;
-        setServerError(
-          errorBody?.message ||
-            dictionary.loginFailed ||
-            'Login failed. Please try again.'
-        );
-        return;
-      }
+      await apiClient.post('/auth/login', { email, password });
 
       const state = new URLSearchParams(window.location.search).get('state');
       const fallbackPath = getLocalizedRoute('homepage', language as Locale);
       const redirectPath =
         state && state.startsWith('/') ? state : fallbackPath;
       window.location.replace(redirectPath);
-    } catch {
+    } catch (error) {
+      const apiError = toApiClientError(error);
       setServerError(
-        dictionary.networkError || 'Network error. Please try again.'
+        apiError.message ||
+          dictionary.loginFailed ||
+          dictionary.networkError ||
+          'Login failed. Please try again.'
       );
     } finally {
       setIsSubmitting(false);

@@ -13,8 +13,6 @@ import {
   UseGuards,
   UnauthorizedException,
   InternalServerErrorException,
-  ValidationPipe,
-  UsePipes,
   UseInterceptors,
   Inject,
   Query,
@@ -39,6 +37,10 @@ import { FilesInterceptor } from '@nestjs/platform-express';
 import { IngredientNormalizerService } from '../ingredients/service/ingredient-normalizer.service';
 import type { JwtUser } from './types';
 import { RateRecipeDto } from './dto/rate-recipe.dto';
+import { RecipesQueryService } from './service/recipes-query.service';
+import { DeleteImageDto } from './dto/delete-image.dto';
+import { UpdateImageDto } from './dto/update-image.dto';
+import { FilterRecipesQueryDto } from './dto/filter-recipes-query.dto';
 
 interface NormalizedIngredientEntry {
   ingredientId: Types.ObjectId | string;
@@ -47,20 +49,23 @@ interface NormalizedIngredientEntry {
   unit?: Types.ObjectId;
 }
 
+type RecipeFindQuery = ReturnType<Model<Recipe>['find']>;
+type RecipeFindByIdQuery = ReturnType<Model<Recipe>['findById']>;
+
 @ApiTags('recipes')
 @Controller('recipes')
-@UsePipes(new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }))
 export class RecipesController {
   constructor(
     @InjectModel(Recipe.name) private readonly recipeModel: Model<Recipe>,
     @InjectModel('Unit') private readonly unitModel: Model<unknown>,
     private readonly cloudinaryService: CloudinaryService,
     private readonly ingredientNormalizer: IngredientNormalizerService,
+    private readonly recipesQueryService: RecipesQueryService,
     @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
   ) {}
 
   // Shared helper to populate ingredient refs and apply lean with virtuals
-  private withPopulateAndLean(query: any) {
+  private withPopulateAndLean(query: RecipeFindQuery | RecipeFindByIdQuery) {
     return (
       query
         // Project only the fields needed by RecipeDto
@@ -165,11 +170,7 @@ export class RecipesController {
   @Get(`:language`)
   @ApiOkResponse({ type: [RecipeDto] })
   async findAll(@Param('language') language: string) {
-    // Use lean for performance and map to DTOs
-    const results = await this.withPopulateAndLean(
-      this.recipeModel.find({ language }).select('+slug')
-    ).exec();
-    return plainToInstance(RecipeDto, results);
+    return this.recipesQueryService.findAll(language);
   }
 
   // Filter recipes with advanced query params
@@ -177,112 +178,9 @@ export class RecipesController {
   @ApiOkResponse({ type: [RecipeDto] })
   async filterRecipes(
     @Param('language') language: string,
-    @Query('search') search?: string,
-    @Query('mealType') mealType?: string,
-    @Query('diets') diets?: string | string[],
-    @Query('techniques') techniques?: string | string[],
-    @Query('specialAttributes') specialAttributes?: string | string[],
-    @Query('difficulty') difficulty?: string,
-    @Query('country') country?: string,
-    @Query('prepTimeMin') prepTimeMin?: string,
-    @Query('prepTimeMax') prepTimeMax?: string,
-    @Query('cookTimeMin') cookTimeMin?: string,
-    @Query('cookTimeMax') cookTimeMax?: string,
-    @Query('caloriesMin') caloriesMin?: string,
-    @Query('caloriesMax') caloriesMax?: string,
-    @Query('estimatedCostMin') estimatedCostMin?: string,
-    @Query('estimatedCostMax') estimatedCostMax?: string
+    @Query() query: FilterRecipesQueryDto
   ) {
-    const andConditions = [];
-    if (search) {
-      andConditions.push({
-        $or: [
-          { 'ingredients.name': { $regex: search, $options: 'i' } },
-          { 'ai.keywords': { $regex: search, $options: 'i' } },
-        ],
-      });
-    }
-    if (mealType) {
-      andConditions.push({ mealType });
-    }
-    if (difficulty) {
-      // Check both root and ai.difficulty for compatibility
-      andConditions.push({
-        $or: [{ difficulty }, { 'ai.difficulty': difficulty }],
-      });
-    }
-    if (country) {
-      andConditions.push({ country });
-    }
-    if (diets) {
-      const arr = Array.isArray(diets) ? diets : [diets];
-      andConditions.push({ 'ai.dietLabels': { $all: arr } });
-    }
-    if (techniques) {
-      const arr = Array.isArray(techniques) ? techniques : [techniques];
-      andConditions.push({ 'ai.techniques': { $all: arr } });
-    }
-    if (specialAttributes) {
-      const arr = Array.isArray(specialAttributes)
-        ? specialAttributes
-        : [specialAttributes];
-      andConditions.push({ 'ai.specialAttributes': { $all: arr } });
-    }
-    if (prepTimeMin || prepTimeMax) {
-      const prepTimeCond: Record<string, number> = {};
-      if (prepTimeMin) prepTimeCond.$gte = Number(prepTimeMin);
-      if (prepTimeMax) prepTimeCond.$lte = Number(prepTimeMax);
-      andConditions.push({ prepTime: prepTimeCond });
-    }
-    // Only add cookTime filter if not full range (0-240)
-    const cookTimeMinNum = cookTimeMin !== undefined ? Number(cookTimeMin) : 0;
-    const cookTimeMaxNum =
-      cookTimeMax !== undefined ? Number(cookTimeMax) : 240;
-    if (!(cookTimeMinNum === 0 && cookTimeMaxNum === 240)) {
-      const cookTimeCond: Record<string, number> = {};
-      if (cookTimeMinNum > 0) cookTimeCond.$gte = cookTimeMinNum;
-      if (cookTimeMaxNum < 240) cookTimeCond.$lte = cookTimeMaxNum;
-      andConditions.push({
-        $or: [{ cookTime: cookTimeCond }, { cookTime: null }],
-      });
-    }
-    // Only add calories filter if not full range (0-2000)
-    const caloriesMinNum = caloriesMin !== undefined ? Number(caloriesMin) : 0;
-    const caloriesMaxNum =
-      caloriesMax !== undefined ? Number(caloriesMax) : 2000;
-    if (!(caloriesMinNum === 0 && caloriesMaxNum === 2000)) {
-      const calCond: Record<string, number> = {};
-      if (caloriesMinNum > 0) calCond.$gte = caloriesMinNum;
-      if (caloriesMaxNum < 2000) calCond.$lte = caloriesMaxNum;
-      andConditions.push({
-        $or: [
-          { 'ai.nutrition.calories': calCond },
-          { 'ai.nutrition.calories': null },
-        ],
-      });
-    }
-    // Only add estimatedCost filter if not full range (0-30)
-    const estimatedCostMinNum =
-      estimatedCostMin !== undefined ? Number(estimatedCostMin) : 0;
-    const estimatedCostMaxNum =
-      estimatedCostMax !== undefined ? Number(estimatedCostMax) : 30;
-    if (!(estimatedCostMinNum === 0 && estimatedCostMaxNum === 30)) {
-      const costCond: Record<string, number> = {};
-      if (estimatedCostMinNum > 0) costCond.$gte = estimatedCostMinNum;
-      if (estimatedCostMaxNum < 30) costCond.$lte = estimatedCostMaxNum;
-      andConditions.push({
-        $or: [{ 'ai.estimatedCost': costCond }, { 'ai.estimatedCost': null }],
-      });
-    }
-    // Always filter by language, then lean and map
-    const query =
-      andConditions.length > 0
-        ? { $and: [{ language }, ...andConditions] }
-        : { language };
-    const filtered = await this.withPopulateAndLean(
-      this.recipeModel.find(query).select('+slug')
-    ).exec();
-    return plainToInstance(RecipeDto, filtered);
+    return this.recipesQueryService.filter(language, query);
   }
 
   // Get a recipe by language and slug (SEO-friendly)
@@ -294,147 +192,7 @@ export class RecipesController {
     @Param('language') language: string,
     @Param('slug') slug: string
   ): Promise<RecipeDto> {
-    // Use aggregation to join ingredient, variant, and unit data
-    const results = await this.recipeModel
-      .aggregate([
-        { $match: { language, slug } },
-        { $unwind: { path: '$ingredients', preserveNullAndEmptyArrays: true } },
-        {
-          $lookup: {
-            from: 'ingredients',
-            localField: 'ingredients.ingredientId',
-            foreignField: '_id',
-            as: 'ingredients.ingredient',
-          },
-        },
-        {
-          $unwind: {
-            path: '$ingredients.ingredient',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        // Filter out ingredients with no matching document
-        { $match: { 'ingredients.ingredient': { $ne: null } } },
-        {
-          $lookup: {
-            from: 'ingredientvariants',
-            localField: 'ingredients.variantId',
-            foreignField: '_id',
-            as: 'ingredients.variant',
-          },
-        },
-        {
-          $unwind: {
-            path: '$ingredients.variant',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        {
-          $lookup: {
-            from: 'units',
-            localField: 'ingredients.unit',
-            foreignField: '_id',
-            as: 'ingredients.unitObj',
-          },
-        },
-        {
-          $unwind: {
-            path: '$ingredients.unitObj',
-            preserveNullAndEmptyArrays: true,
-          },
-        },
-        // Remove entries where we couldn't resolve an ingredient
-        {
-          $match: { 'ingredients.ingredientId': { $exists: true, $ne: null } },
-        },
-        {
-          $group: {
-            _id: '$_id',
-            author: { $first: '$author' },
-            title: { $first: '$title' },
-            description: { $first: '$description' },
-            slug: { $first: '$slug' },
-            images: { $first: '$images' },
-            cookTime: { $first: '$cookTime' },
-            prepTime: { $first: '$prepTime' },
-            servings: { $first: '$servings' },
-            instructions: { $first: '$instructions' },
-            country: { $first: '$country' },
-            language: { $first: '$language' },
-            averageRating: { $first: '$averageRating' },
-            ratingCount: { $first: '$ratingCount' },
-            ai: { $first: '$ai' },
-            ingredients: {
-              $push: {
-                ingredientId: '$ingredients.ingredientId',
-                name: {
-                  $ifNull: [
-                    {
-                      $getField: {
-                        field: '$language',
-                        input: '$ingredients.ingredient.locales',
-                      },
-                    },
-                    '$ingredients.ingredient.defaultName',
-                  ],
-                },
-                variantId: '$ingredients.variantId',
-                quantity: '$ingredients.quantity',
-                unit: {
-                  $ifNull: [
-                    {
-                      $getField: {
-                        field: '$language',
-                        input: '$ingredients.unitObj.locales',
-                      },
-                    },
-                    '$ingredients.unitObj.defaultName',
-                  ],
-                },
-              },
-            },
-          },
-        },
-        // Remove any ingredient entries missing an ingredientId
-        {
-          $addFields: {
-            ingredients: {
-              $filter: {
-                input: '$ingredients',
-                as: 'ing',
-                cond: { $ne: ['$$ing.ingredientId', null] },
-              },
-            },
-          },
-        },
-        {
-          $project: {
-            _id: 0,
-            id: '$_id',
-            author: 1,
-            title: 1,
-            description: 1,
-            slug: 1,
-            images: 1,
-            cookTime: 1,
-            prepTime: 1,
-            servings: 1,
-            instructions: 1,
-            country: 1,
-            averageRating: 1,
-            ratingCount: 1,
-            ai: 1,
-            ingredients: 1,
-          },
-        },
-      ])
-      .exec();
-    if (!results || results.length === 0) {
-      throw new NotFoundException('Recipe not found');
-    }
-    const doc = results[0];
-    // Transform to DTO
-    return plainToInstance(RecipeDto, doc);
+    return this.recipesQueryService.findBySlug(language, slug);
   }
 
   // Get a recipe by ID (with ObjectId validation)
@@ -576,7 +334,7 @@ export class RecipesController {
   async deleteImage(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
-    @Body('url') url: string
+    @Body() body: DeleteImageDto
   ) {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid ID');
@@ -588,9 +346,7 @@ export class RecipesController {
     if (recipe.author.toString() !== user.userId) {
       throw new UnauthorizedException('Not your recipe');
     }
-    if (!url) {
-      throw new BadRequestException('No image url provided');
-    }
+    const { url } = body;
     // Extract publicId from Cloudinary URL
     const match = url.match(/\/([^/]+)\.[a-zA-Z]+$/);
     const publicId = match ? match[1] : null;
@@ -613,8 +369,7 @@ export class RecipesController {
   async updateImage(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
-    @Body('oldUrl') oldUrl: string,
-    @Body('newUrl') newUrl: string
+    @Body() body: UpdateImageDto
   ) {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid ID');
@@ -626,9 +381,7 @@ export class RecipesController {
     if (recipe.author.toString() !== user.userId) {
       throw new UnauthorizedException('Not your recipe');
     }
-    if (!oldUrl || !newUrl) {
-      throw new BadRequestException('Missing image url(s)');
-    }
+    const { oldUrl, newUrl } = body;
     recipe.images = (recipe.images || []).map((img) =>
       img === oldUrl ? newUrl : img
     );

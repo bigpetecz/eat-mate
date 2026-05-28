@@ -22,7 +22,7 @@ import { OpenAIService } from '../openai/openai.service';
 // JwtUser type from jwt.strategy validate()
 type JwtUser = { userId: string; email: string };
 // UserDecorator: use @Req() for now since custom decorator is missing
-import { IsString, IsOptional, IsIn } from 'class-validator';
+import { IsString, IsOptional, IsIn, IsMongoId } from 'class-validator';
 import { Type } from 'class-transformer';
 class UpdateSettingsDto {
   @IsOptional()
@@ -39,7 +39,7 @@ class UpdateSettingsDto {
 }
 
 class FavoriteRecipeDto {
-  @IsString()
+  @IsMongoId()
   @Type(() => String)
   recipeId: string;
 }
@@ -90,9 +90,18 @@ export class UsersController {
     if (dto.gender !== undefined) userDoc.gender = dto.gender;
     try {
       await userDoc.save();
-    } catch (err: any) {
+    } catch (err: unknown) {
       // Mongo duplicate key error code
-      if (err.code === 11000 && err.keyPattern?.displayName) {
+      if (
+        typeof err === 'object' &&
+        err !== null &&
+        'code' in err &&
+        (err as { code?: unknown }).code === 11000 &&
+        'keyPattern' in err &&
+        typeof (err as { keyPattern?: unknown }).keyPattern === 'object' &&
+        (err as { keyPattern?: { displayName?: unknown } }).keyPattern
+          ?.displayName
+      ) {
         throw new BadRequestException('Display name is already taken.');
       }
       throw err;

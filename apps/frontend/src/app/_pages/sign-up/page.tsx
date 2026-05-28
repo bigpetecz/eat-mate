@@ -15,6 +15,8 @@ import { useParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { getLocalizedRoute, Locale } from '@/i18n';
 import { getDictionary } from '@/dictionaries/dictionaries';
+import apiClient from '@/app/api-client';
+import { toApiClientError } from '@/lib/api-error';
 
 interface RegisterForm {
   displayName: string;
@@ -47,23 +49,16 @@ export default function RegisterPage() {
   const onSubmit = async (data: RegisterForm) => {
     setServerError(null);
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          displayName: data.displayName,
-          email: data.email,
-          password: data.password,
-        }),
+      await apiClient.post('/auth/register', {
+        displayName: data.displayName,
+        email: data.email,
+        password: data.password,
       });
-      if (!res.ok) {
-        const err = await res.json();
-        setServerError(err.message || t('registrationFailed'));
-        return;
-      }
+
       router.replace(getLocalizedRoute('login', language as Locale));
-    } catch {
-      setServerError(t('networkError'));
+    } catch (error) {
+      const apiError = toApiClientError(error);
+      setServerError(apiError.message || t('registrationFailed'));
     }
   };
 
