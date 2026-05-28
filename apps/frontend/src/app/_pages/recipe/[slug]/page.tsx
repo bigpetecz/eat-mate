@@ -55,6 +55,11 @@ export default async function RecipePage({
   }
   const user = (await getAuthenticatedUser()) as User | null;
   if (!recipe) return notFound();
+  const recipeId = recipe._id || recipe.id;
+
+  if (!recipeId) {
+    notFound();
+  }
 
   return (
     <div className="bg-muted">
@@ -142,7 +147,7 @@ export default async function RecipePage({
             </div>
             {/* Rating section */}
             <RecipeRating
-              recipeId={recipe._id}
+              recipeId={recipeId}
               authorId={recipe.author}
               averageRating={recipe.averageRating}
               ratingCount={recipe.ratingCount}
