@@ -5,8 +5,9 @@
   "scripts": {
     "lint:frontend": "nx lint frontend",
     "typecheck:frontend": "nx typecheck frontend",
+    "build:frontend": "NX_TUI=false npx nx run @eat-mate/frontend:build",
     "test:frontend": "nx test frontend",
-    "ci:frontend": "npm run lint:frontend && npm run typecheck:frontend && npm run test:frontend"
+    "ci:frontend": "npm run lint:frontend && npm run typecheck:frontend && npm run test:frontend && npm run build:frontend"
   },
   "private": true,
   "dependencies": {

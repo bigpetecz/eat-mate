@@ -1,4 +1,3 @@
-// ...existing code...
 import {
   Controller,
   Post,
@@ -7,51 +6,21 @@ import {
   Param,
   UseGuards,
   Req,
-  NotFoundException,
   Body,
   BadRequestException,
   Put,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types, isValidObjectId } from 'mongoose';
 import { Recipe } from '../recipes/schema/recipe.schema';
-import { User } from './user.schema';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import type { Request } from 'express';
-import { OpenAIService } from '../openai/openai.service';
-// JwtUser type from jwt.strategy validate()
-type JwtUser = { userId: string; email: string };
-// UserDecorator: use @Req() for now since custom decorator is missing
-import { IsString, IsOptional, IsIn, IsMongoId } from 'class-validator';
-import { Type } from 'class-transformer';
-class UpdateSettingsDto {
-  @IsOptional()
-  @IsString()
-  displayName?: string;
+import type { JwtUser } from '../auth/jwt-user.interface';
+import { FavoriteRecipeDto } from './dto/favorite-recipe.dto';
+import { UpdateUserSettingsDto } from './dto/update-user-settings.dto';
+import { UsersService } from './users.service';
 
-  @IsOptional()
-  @IsIn(['auto', 'dark', 'light'])
-  theme?: 'auto' | 'dark' | 'light';
-
-  @IsOptional()
-  @IsIn(['male', 'female', null])
-  gender?: 'male' | 'female' | null;
-}
-
-class FavoriteRecipeDto {
-  @IsMongoId()
-  @Type(() => String)
-  recipeId: string;
-}
-
-// Removed unused AuthenticatedRequest interface
 @Controller('users')
 export class UsersController {
-  constructor(
-    @InjectModel(User.name) private readonly userModel: Model<User>,
-    @InjectModel(Recipe.name) private readonly recipeModel: Model<Recipe>,
-    private readonly openaiService: OpenAIService
-  ) {}
+  constructor(private readonly usersService: UsersService) {}
 
   // Get recipes authored by the current user
   @UseGuards(JwtAuthGuard)
@@ -62,12 +31,7 @@ export class UsersController {
   ): Promise<{ recipes: Recipe[] }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
-    // Assumes Recipe schema has an 'author' field referencing User._id
-    const recipes = await this.recipeModel
-      .find({ author: user.userId, language })
-      .lean()
-      .exec();
-    return { recipes };
+    return this.usersService.getMyRecipes(user, language);
   }
 
   // Update user settings (displayName, theme)
@@ -75,7 +39,7 @@ export class UsersController {
   @Put('settings')
   async updateSettings(
     @Req() req: Request,
-    @Body() dto: UpdateSettingsDto
+    @Body() dto: UpdateUserSettingsDto
   ): Promise<{
     displayName: string;
     theme: string;
@@ -83,35 +47,9 @@ export class UsersController {
   }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
-    const userDoc = await this.userModel.findById(user.userId).exec();
-    if (!userDoc) throw new NotFoundException('User not found');
-    if (dto.displayName !== undefined) userDoc.displayName = dto.displayName;
-    if (dto.theme !== undefined) userDoc.theme = dto.theme;
-    if (dto.gender !== undefined) userDoc.gender = dto.gender;
-    try {
-      await userDoc.save();
-    } catch (err: unknown) {
-      // Mongo duplicate key error code
-      if (
-        typeof err === 'object' &&
-        err !== null &&
-        'code' in err &&
-        (err as { code?: unknown }).code === 11000 &&
-        'keyPattern' in err &&
-        typeof (err as { keyPattern?: unknown }).keyPattern === 'object' &&
-        (err as { keyPattern?: { displayName?: unknown } }).keyPattern
-          ?.displayName
-      ) {
-        throw new BadRequestException('Display name is already taken.');
-      }
-      throw err;
-    }
-    return {
-      displayName: userDoc.displayName,
-      theme: userDoc.theme,
-      gender: userDoc.gender,
-    };
+    return this.usersService.updateSettings(user, dto);
   }
+
   // Generate a unique funny username using OpenAI
   @UseGuards(JwtAuthGuard)
   @Get('generate-user-name')
@@ -120,27 +58,7 @@ export class UsersController {
   ): Promise<{ displayName: string }> {
     const displayNameParam = req.query.displayName as string;
     const emailParam = req.query.email as string;
-    if (!displayNameParam || !emailParam) {
-      throw new BadRequestException(
-        'Both displayName and email must be provided in query parameters.'
-      );
-    }
-    let attempt = 0;
-    const maxAttempts = 5;
-    let displayName = '';
-    while (attempt < maxAttempts) {
-      displayName = await this.openaiService.generateUsername({
-        name: displayNameParam,
-        email: emailParam,
-      });
-      // Check uniqueness in DB
-      const exists = await this.userModel.exists({ displayName });
-      if (!exists) break;
-      attempt++;
-    }
-    if (!displayName)
-      throw new BadRequestException('Failed to generate username');
-    return { displayName };
+    return this.usersService.generateFunnyName(displayNameParam, emailParam);
   }
 
   // Add recipe to favorites
@@ -152,24 +70,7 @@ export class UsersController {
   ): Promise<{ favorites: string[] }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
-    if (!isValidObjectId(dto.recipeId))
-      throw new BadRequestException('Invalid recipe ID');
-    const recipe = await this.recipeModel.findById(dto.recipeId).lean().exec();
-    if (!recipe) throw new NotFoundException('Recipe not found');
-    const userDoc = await this.userModel.findById(user.userId).exec();
-    if (!userDoc) throw new NotFoundException('User not found');
-    if (
-      userDoc.favorites.some(
-        (fav: Types.ObjectId) => fav.toString() === dto.recipeId
-      )
-    ) {
-      throw new BadRequestException('Recipe already in favorites.');
-    }
-    userDoc.favorites.push(new Types.ObjectId(dto.recipeId));
-    await userDoc.save();
-    return {
-      favorites: userDoc.favorites.map((fav: Types.ObjectId) => fav.toString()),
-    };
+    return this.usersService.addFavorite(user, dto.recipeId);
   }
 
   // Remove recipe from favorites
@@ -181,21 +82,7 @@ export class UsersController {
   ): Promise<{ favorites: string[] }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
-    if (!isValidObjectId(id))
-      throw new BadRequestException('Invalid recipe ID');
-    const userDoc = await this.userModel.findById(user.userId).exec();
-    if (!userDoc) throw new NotFoundException('User not found');
-    const index = userDoc.favorites.findIndex(
-      (fav: Types.ObjectId) => fav.toString() === id
-    );
-    if (index === -1) {
-      throw new BadRequestException('Recipe not in favorites.');
-    }
-    userDoc.favorites.splice(index, 1);
-    await userDoc.save();
-    return {
-      favorites: userDoc.favorites.map((fav: Types.ObjectId) => fav.toString()),
-    };
+    return this.usersService.removeFavorite(user, id);
   }
 
   // Get user's favorite recipes
@@ -207,16 +94,6 @@ export class UsersController {
   ): Promise<{ recipes: Recipe[] }> {
     if (!req.user) throw new BadRequestException('User not found in request');
     const user: JwtUser = req.user as JwtUser;
-    const userDoc = await this.userModel.findById(user.userId).lean().exec();
-    if (!userDoc) throw new NotFoundException('User not found');
-    const favoriteIds = Array.isArray(userDoc.favorites)
-      ? userDoc.favorites.map((fav: Types.ObjectId) => fav.toString())
-      : [];
-    if (!favoriteIds.length) return { recipes: [] };
-    const recipes = await this.recipeModel
-      .find({ _id: { $in: favoriteIds }, language })
-      .lean()
-      .exec();
-    return { recipes };
+    return this.usersService.getFavorites(user, language);
   }
 }

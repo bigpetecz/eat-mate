@@ -4,6 +4,7 @@ import { User, UserSchema } from './user.schema';
 import { UsersController } from './users.controller';
 import { Recipe, RecipeSchema } from '../recipes/schema/recipe.schema';
 import { OpenAIModule } from '../openai/openai.module';
+import { UsersService } from './users.service';
 
 @Module({
   imports: [
@@ -14,7 +15,7 @@ import { OpenAIModule } from '../openai/openai.module';
     OpenAIModule,
   ],
   exports: [MongooseModule],
-  providers: [],
+  providers: [UsersService],
   controllers: [UsersController],
 })
 export class UsersModule {}

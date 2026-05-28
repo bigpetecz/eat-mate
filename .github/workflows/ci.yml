@@ -13,7 +13,7 @@ env:
 
 jobs:
   frontend-quality:
-    name: Frontend Lint Typecheck Test
+    name: Frontend Lint Typecheck Test Build
     runs-on: ubuntu-latest
 
     steps:

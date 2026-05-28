@@ -24,7 +24,28 @@ function extractMessage(data: unknown, fallback: string): string {
     return fallback;
   }
 
-  const candidate = data as { message?: string | string[] };
+  const candidate = data as {
+    message?: string | string[];
+    error?: { message?: string | string[] };
+    details?: { message?: string | string[] };
+  };
+
+  if (Array.isArray(candidate.error?.message)) {
+    return candidate.error.message[0] || fallback;
+  }
+
+  if (typeof candidate.error?.message === 'string') {
+    return candidate.error.message || fallback;
+  }
+
+  if (Array.isArray(candidate.details?.message)) {
+    return candidate.details.message[0] || fallback;
+  }
+
+  if (typeof candidate.details?.message === 'string') {
+    return candidate.details.message || fallback;
+  }
+
   if (Array.isArray(candidate.message)) {
     return candidate.message[0] || fallback;
   }
