@@ -70,7 +70,7 @@ export class RecipesController {
       query
         // Project only the fields needed by RecipeDto
         .select(
-          'author title description slug images cookTime prepTime servings instructions country ai ' +
+          'author title description language slug images cookTime prepTime servings instructions country ai ' +
             'ingredients.ingredientId ingredients.variantId ingredients.unit'
         )
         .populate('ingredients.ingredientId')

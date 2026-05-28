@@ -1,7 +1,12 @@
 'use client';
 import { useParams, usePathname, useRouter } from 'next/navigation';
 
-import { i18n, type Locale, resolveLocalizedPath } from '../i18n';
+import {
+  getLocalizedRoute,
+  i18n,
+  type Locale,
+  resolveLocalizedPath,
+} from '../i18n';
 import {
   Select,
   SelectTrigger,
@@ -20,33 +25,83 @@ export function LanguageSwitcher() {
   const params = useParams();
   const pathname = usePathname();
 
+  const resolveRecipeTranslationSlug = async (
+    language: string,
+    slug: string,
+    targetLocale: Locale
+  ): Promise<string | null> => {
+    const recipeRes = await fetch(`/api/recipes/${language}/recipe/${slug}`, {
+      cache: 'no-store',
+    });
+    if (!recipeRes.ok) {
+      return null;
+    }
+
+    const recipeData = (await recipeRes.json()) as {
+      id?: string;
+      _id?: string;
+      slug?: string;
+    };
+    const recipeId = recipeData.id || recipeData._id;
+
+    if (!recipeId) {
+      return null;
+    }
+
+    const translationsRes = await fetch(
+      `/api/recipes/${recipeId}/translations`,
+      {
+        cache: 'no-store',
+      }
+    );
+
+    if (!translationsRes.ok) {
+      return null;
+    }
+
+    const translations = (await translationsRes.json()) as Array<{
+      language?: string;
+      slug?: string;
+    }>;
+
+    const targetTranslation = translations.find(
+      (translation) => translation.language === targetLocale
+    );
+
+    return targetTranslation?.slug || null;
+  };
+
   const handleChange = async (value: string) => {
     const locale = value as Locale;
     if (!i18n.locales.includes(locale)) return;
 
-    // Check if on recipe detail page (params.slug and params.language)
-    if (params?.slug && params?.language) {
+    const languageParam =
+      typeof params?.language === 'string' ? params.language : null;
+    const slugParam = typeof params?.slug === 'string' ? params.slug : null;
+    const isRecipeDetailPath = /^\/(en|cs)\/(recipe|recept)\/[^/]+$/.test(
+      pathname
+    );
+
+    // If on recipe detail page, try to navigate using translated slug.
+    if (isRecipeDetailPath && languageParam && slugParam) {
       try {
-        // Call recipe slug API to get slugMap
-        const res = await fetch(
-          `/api/recipes/${params.language}/recipe/${params.slug}`
+        const translatedSlug = await resolveRecipeTranslationSlug(
+          languageParam,
+          slugParam,
+          locale
         );
-        const data = await res.json();
-        if (data?.slugMap && data.slugMap[locale]) {
-          // Build the new path for the recipe detail page
-          const newPath = `/${locale}/${
-            locale === 'en' ? 'recipe' : 'recept'
-          }/${data.slugMap[locale]}`;
-          router.push(newPath);
+
+        if (translatedSlug) {
+          router.push(
+            getLocalizedRoute('recipeDetail', locale, translatedSlug)
+          );
           return;
         }
-      } catch (err) {
-        // fallback: just swap language in path
-        const newPath = resolveLocalizedPath(pathname, locale);
-        router.push(newPath);
-        return;
+      } catch {
+        // Continue to fallback below.
       }
     }
+
     // fallback: just swap language in path
     const newPath = resolveLocalizedPath(pathname, locale);
     router.push(newPath);
