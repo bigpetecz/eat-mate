@@ -155,4 +155,9 @@
 
 html {
   overflow-y: scroll;
+  scrollbar-gutter: stable;
+}
+
+body[data-scroll-locked] {
+  margin-right: 0 !important;
 }
