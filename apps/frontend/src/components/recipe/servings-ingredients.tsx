@@ -1,12 +1,10 @@
 'use client';
-import { FC, useState } from 'react';
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from '@/components/ui/select';
+import { FC, useEffect, useState } from 'react';
+
+import { Button } from '@/components/ui/button';
+
+const MIN_SERVINGS = 1;
+const MAX_SERVINGS = 12;
 
 function toMixedFraction(value: number): string {
   const tolerance = 1e-4;
@@ -47,12 +45,26 @@ export const ServingsIngredients: FC<ServingsIngredientsProps> = ({
   servings: initialServings,
   labels,
 }) => {
-  const [servings, setServings] = useState(initialServings);
-  const scale = servings / initialServings;
+  const safeInitialServings = Math.max(initialServings, MIN_SERVINGS);
+  const [servings, setServings] = useState(safeInitialServings);
+  const scale = servings / safeInitialServings;
+
+  useEffect(() => {
+    setServings(safeInitialServings);
+  }, [safeInitialServings]);
+
+  function updateServings(nextServings: number) {
+    const clampedServings = Math.min(
+      MAX_SERVINGS,
+      Math.max(MIN_SERVINGS, nextServings)
+    );
+
+    setServings(clampedServings);
+  }
 
   return (
     <div>
-      <div className="flex">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
         <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
           <svg
             className="w-5 h-5 text-muted-foreground"
@@ -66,23 +78,40 @@ export const ServingsIngredients: FC<ServingsIngredientsProps> = ({
           </svg>
           {labels.ingredients}
         </h2>
-        <div className="flex items-center mb-4 ml-auto">
-          <span>{labels.servings}:</span>
-          <Select
-            value={String(servings)}
-            onValueChange={(v) => setServings(Number(v))}
+        <div className="flex items-center gap-2 sm:ml-auto">
+          <span className="text-sm text-muted-foreground">
+            {labels.servings}
+          </span>
+          <div
+            className="inline-flex items-center rounded-lg border bg-background shadow-sm"
+            aria-label={labels.servings}
           >
-            <SelectTrigger className="w-16 h-7 ml-1">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {[...Array(12)].map((_, i) => (
-                <SelectItem key={i + 1} value={String(i + 1)}>
-                  {i + 1}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-r-none"
+              onClick={() => updateServings(servings - 1)}
+              disabled={servings <= MIN_SERVINGS}
+              aria-label={`Decrease ${labels.servings}`}
+            >
+              <span aria-hidden="true">−</span>
+            </Button>
+            <span className="min-w-10 px-3 text-center text-sm font-medium">
+              {servings}
+            </span>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-l-none"
+              onClick={() => updateServings(servings + 1)}
+              disabled={servings >= MAX_SERVINGS}
+              aria-label={`Increase ${labels.servings}`}
+            >
+              <span aria-hidden="true">+</span>
+            </Button>
+          </div>
         </div>
       </div>
       <ul className="space-y-1">
