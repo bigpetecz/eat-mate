@@ -2,7 +2,11 @@
 
 const { composePlugins, withNx } = require('@nx/next');
 
-const apiUrl = process.env.NEXT_API_PROXY_URL;
+const apiUrl =
+  process.env.NEXT_API_PROXY_URL ||
+  process.env.NEXT_API_URL ||
+  'http://localhost:3000/api';
+const normalizedApiUrl = apiUrl.replace(/\/$/, '');
 
 /**
  * @type {import('@nx/next/plugins/with-nx').WithNxOptions}
@@ -59,7 +63,7 @@ module.exports = {
     return [
       {
         source: '/api/:path*',
-        destination: `${apiUrl}/:path*`,
+        destination: `${normalizedApiUrl}/:path*`,
       },
     ];
   },

@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
-import { UnitsController } from './units.controller';
-import { UnitsService } from './units.service';
+import { UnitsController } from '../../units/units.controller';
+import { UnitsService } from '../../units/units.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { UnitSchema } from '../../units/schema/unit.schema';
 

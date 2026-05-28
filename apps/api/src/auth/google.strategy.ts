@@ -28,11 +28,12 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     refreshToken: string,
     profile: {
       id: string;
-      name: string;
-      email: string;
+      displayName: string;
+      emails?: Array<{ value: string }>;
+      photos?: Array<{ value: string }>;
     },
     done: VerifyCallback
-  ): Promise<any> {
+  ): Promise<void> {
     try {
       const user = await this.authService.validateGoogleUser(profile);
       return done(null, { ...user });
