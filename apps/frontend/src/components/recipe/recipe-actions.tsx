@@ -34,6 +34,7 @@ export const RecipeActions: FC<RecipeActionsProps> = ({
   user,
 }) => {
   const [copied, setCopied] = useState(false);
+  const [isCopyTooltipOpen, setIsCopyTooltipOpen] = useState(false);
   const [isAuthor, setIsAuthor] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [loadingFavorite, setLoadingFavorite] = useState(false);
@@ -49,7 +50,7 @@ export const RecipeActions: FC<RecipeActionsProps> = ({
       }
     }
     fetchFavorite();
-  }, [recipeId]);
+  }, [language, recipeId]);
 
   useEffect(() => {
     if (user && authorId) {
@@ -105,7 +106,7 @@ export const RecipeActions: FC<RecipeActionsProps> = ({
             : actionsDict.addToFavorites}
         </TooltipContent>
       </Tooltip>
-      <Tooltip open={copied}>
+      <Tooltip open={isCopyTooltipOpen} onOpenChange={setIsCopyTooltipOpen}>
         <TooltipTrigger asChild>
           <Button
             className="cursor-pointer"
@@ -115,13 +116,19 @@ export const RecipeActions: FC<RecipeActionsProps> = ({
             onClick={async () => {
               await navigator.clipboard.writeText(window.location.href);
               setCopied(true);
-              setTimeout(() => setCopied(false), 1500);
+              setIsCopyTooltipOpen(true);
+              setTimeout(() => {
+                setCopied(false);
+                setIsCopyTooltipOpen(false);
+              }, 1500);
             }}
           >
             <Share2 className="w-5 h-5" />
           </Button>
         </TooltipTrigger>
-        <TooltipContent side="top">{actionsDict.linkCopied}</TooltipContent>
+        <TooltipContent side="top">
+          {copied ? actionsDict.linkCopied : actionsDict.shareRecipe}
+        </TooltipContent>
       </Tooltip>
       {isAuthor && (
         <Link
