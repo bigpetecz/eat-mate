@@ -94,19 +94,9 @@ export class TranslationScheduler {
                 retry(() => this.googleTranslate.translateText(instr, 'en'))
               )
             );
-            // Translate ingredients array
-            translatedIngredients = (recipe.ingredients || []).map(
-              async (ingredient) => {
-                const newIngredient = { ...ingredient };
-                if (ingredient.name) {
-                  newIngredient.name = await retry(() =>
-                    this.googleTranslate.translateText(ingredient.name, 'en')
-                  );
-                }
-                return newIngredient;
-              }
-            );
-            translatedIngredients = await Promise.all(translatedIngredients);
+            // Ingredients are normalized references (ingredientId/variantId/unit).
+            // Keep them as-is across language translations.
+            translatedIngredients = recipe.ingredients || [];
           } catch (err) {
             this.logger.error(
               `Translation failed for recipe ${recipe._id} to EN:`,
@@ -206,19 +196,9 @@ export class TranslationScheduler {
                 retry(() => this.googleTranslate.translateText(instr, 'cs'))
               )
             );
-            // Translate ingredients array
-            translatedIngredients = (recipe.ingredients || []).map(
-              async (ingredient) => {
-                const newIngredient = { ...ingredient };
-                if (ingredient.name) {
-                  newIngredient.name = await retry(() =>
-                    this.googleTranslate.translateText(ingredient.name, 'cs')
-                  );
-                }
-                return newIngredient;
-              }
-            );
-            translatedIngredients = await Promise.all(translatedIngredients);
+            // Ingredients are normalized references (ingredientId/variantId/unit).
+            // Keep them as-is across language translations.
+            translatedIngredients = recipe.ingredients || [];
           } catch (err) {
             this.logger.error(
               `Translation failed for recipe ${recipe._id} to CS:`,

@@ -30,7 +30,10 @@ export class OpenAIService {
       ],
     });
 
-    const suggestion = completion.choices[0].message.content.trim();
+    const suggestion = completion.choices[0].message.content?.trim();
+    if (!suggestion) {
+      return 'ChefMate';
+    }
     return suggestion;
   }
 
@@ -40,7 +43,11 @@ export class OpenAIService {
   async generateAiFields(recipe: {
     title: string;
     description?: string;
-    ingredients: { name: string; quantity: string }[];
+    ingredients: Array<{
+      name?: string;
+      quantity: string | number;
+      ingredientId?: string | { toString: () => string };
+    }>;
     instructions?: string[];
     country?: string;
     dietLabels?: string[];
@@ -48,7 +55,7 @@ export class OpenAIService {
   }): Promise<{
     keywords?: string[];
     dietLabels?: string[];
-    nutrition?: any;
+    nutrition?: Record<string, number>;
     estimatedCost?: number;
     winePairing?: WinePairing;
     techniques?: Technique[];
@@ -94,7 +101,14 @@ Description: ${recipe.description}
 Country: ${recipe.country}
 Servings: ${recipe.servings}
 Ingredients: ${recipe.ingredients
-      .map((i) => `${i.name}: ${i.quantity}`)
+      .map((i) => {
+        const ingredientName =
+          i.name ||
+          (typeof i.ingredientId === 'string'
+            ? i.ingredientId
+            : i.ingredientId?.toString?.() || 'ingredient');
+        return `${ingredientName}: ${String(i.quantity)}`;
+      })
       .join(', ')}
 Instructions: ${(recipe.instructions || []).join(' ')}
 
@@ -124,6 +138,12 @@ Respond in JSON with keys: dietLabels, techniques, specialAttributes, nutrition,
     }
 
     const content = completion.choices[0].message.content;
+    if (!content) {
+      this.logger.error(
+        'OpenAI returned empty content for generateAiFields response.'
+      );
+      return {};
+    }
     try {
       const parsed = JSON.parse(content);
       return {

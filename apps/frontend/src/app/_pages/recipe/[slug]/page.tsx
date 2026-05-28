@@ -25,7 +25,11 @@ export const DAILY_VALUES = {
 import { recipeDetailDictionary } from '@/dictionaries/recipeDetail';
 import { Nutritions } from '@/components/recipe/nutritions';
 import { Recipe } from '@/types/recipe';
-import { fetchWithAuth } from '@/lib/server-api';
+import {
+  fetchWithAuth,
+  getAuthenticatedUser,
+  ServerApiError,
+} from '@/lib/server-api';
 import { User } from '@/app/auth/authStore';
 
 export default async function RecipePage({
@@ -44,16 +48,12 @@ export default async function RecipePage({
       method: 'GET',
     });
   } catch (error) {
-    console.error('Failed to fetch recipe:', error);
-    notFound();
+    if (error instanceof ServerApiError && error.status === 404) {
+      notFound();
+    }
+    throw error;
   }
-  let user: User | null = null;
-  try {
-    user = await fetchWithAuth('/auth/me', { method: 'GET' });
-  } catch {
-    // 401 is expected for non-authenticated users
-    console.warn('User not authenticated');
-  }
+  const user = (await getAuthenticatedUser()) as User | null;
   if (!recipe) return notFound();
 
   return (

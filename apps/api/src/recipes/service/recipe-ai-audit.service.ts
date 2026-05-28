@@ -6,6 +6,27 @@ import { Recipe } from '../schema/recipe.schema';
 import { OpenAIService } from '../../openai/openai.service';
 import crypto from 'crypto';
 
+type AiUpdatePayload = {
+  'ai.keywords'?: string[];
+  'ai.dietLabels'?: string[];
+  'ai.nutrition'?: Record<string, number>;
+  'ai.techniques'?: string[];
+  'ai.specialAttributes'?: string[];
+  'ai.winePairing'?: string;
+  'ai.difficulty'?: string;
+  'ai.estimatedCost'?: number;
+  'ai.flavour'?: {
+    sweetness: number;
+    saltiness: number;
+    sourness: number;
+    bitterness: number;
+    savoriness: number;
+    fattiness: number;
+    spiciness: number;
+  };
+  'ai.hash': string;
+};
+
 @Injectable()
 export class RecipeAiAuditService {
   private readonly logger = new Logger(RecipeAiAuditService.name);
@@ -69,24 +90,28 @@ export class RecipeAiAuditService {
         }
         const hash = this.computeRecipeHash(recipe);
         // Build dot notation update for each ai field (only those present in aiFields)
-        const update: Record<string, any> = {};
+        const update: AiUpdatePayload = {
+          'ai.hash': hash,
+        };
         if (aiFields.keywords) update['ai.keywords'] = aiFields.keywords;
         if (aiFields.dietLabels) update['ai.dietLabels'] = aiFields.dietLabels;
         if (aiFields.nutrition) update['ai.nutrition'] = aiFields.nutrition;
         if (aiFields.techniques) update['ai.techniques'] = aiFields.techniques;
-        // Only set extra fields if they exist on aiFields
-        if ('specialAttributes' in aiFields)
-          update['ai.specialAttributes'] = (aiFields as any).specialAttributes;
-        if ('winePairing' in aiFields)
-          update['ai.winePairing'] = (aiFields as any).winePairing;
-        if ('difficulty' in aiFields)
-          update['ai.difficulty'] = (aiFields as any).difficulty;
-        if ('estimatedCost' in aiFields)
-          update['ai.estimatedCost'] = (aiFields as any).estimatedCost;
+        if (aiFields.specialAttributes) {
+          update['ai.specialAttributes'] = aiFields.specialAttributes;
+        }
+        if (aiFields.winePairing) {
+          update['ai.winePairing'] = aiFields.winePairing;
+        }
+        if (aiFields.difficulty) {
+          update['ai.difficulty'] = aiFields.difficulty;
+        }
+        if (typeof aiFields.estimatedCost === 'number') {
+          update['ai.estimatedCost'] = aiFields.estimatedCost;
+        }
         if ('flavour' in aiFields && aiFields.flavour) {
           update['ai.flavour'] = aiFields.flavour;
         }
-        update['ai.hash'] = hash;
         const updateResult = await this.recipeModel.updateOne(
           { _id: recipe._id },
           { $set: update }

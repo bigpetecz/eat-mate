@@ -24,7 +24,7 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip';
 import { apiClient } from '@/app/api-client';
-import { User } from '../../auth/authStore';
+import { useAuthStore, User } from '../../auth/authStore';
 import {
   Select,
   SelectTrigger,
@@ -32,6 +32,8 @@ import {
   SelectContent,
   SelectItem,
 } from '@/components/ui/select';
+import { ApiClientError } from '@/lib/api-error';
+import { toast } from 'sonner';
 
 const settingsSchema = z.object({
   displayName: z.string().min(2, 'Display name must be at least 2 characters'),
@@ -47,6 +49,7 @@ interface SettingsFormProps {
 }
 
 export function SettingsForm({ user, dict }: SettingsFormProps) {
+  const setUser = useAuthStore((s) => s.setUser);
   //   const { setTheme } = useTheme();
   const form = useForm<SettingsFormValues>({
     resolver: zodResolver(settingsSchema),
@@ -61,29 +64,44 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
   const onSubmit = async (values: SettingsFormValues) => {
     setSaving(true);
     try {
-      await apiClient.put('users/settings', {
+      const { data } = await apiClient.put<{
+        displayName: string;
+        theme: 'auto' | 'light' | 'dark';
+        gender: 'male' | 'female' | null;
+      }>('users/settings', {
         displayName: values.displayName,
         theme: values.theme,
         gender: values.gender,
       });
+      setUser(
+        user
+          ? {
+              ...user,
+              displayName: data.displayName,
+              theme: data.theme,
+              gender: data.gender,
+            }
+          : null
+      );
+      toast.success(dict.saved ?? 'Settings saved');
       //   setTheme(values.theme);
     } catch (e: unknown) {
-      if (e && typeof e === 'object' && 'response' in e) {
-        const error = e as { response?: { data?: { message?: string } } };
-        if (error?.response?.data?.message) {
+      if (e instanceof ApiClientError) {
+        if (e.message) {
           form.setError('displayName', {
-            message: error.response.data.message,
+            message: e.message,
           });
         } else {
           console.error('Failed to update settings', e);
+          toast.error(dict.failedToSave ?? 'Failed to save settings');
         }
       } else {
         console.error('Failed to update settings', e);
+        toast.error(dict.failedToSave ?? 'Failed to save settings');
       }
     } finally {
       setSaving(false);
     }
-    window.location.reload();
   };
 
   const [generating, setGenerating] = useState(false);
@@ -124,7 +142,7 @@ export function SettingsForm({ user, dict }: SettingsFormProps) {
                   />
                 </FormControl>
                 <TooltipProvider>
-                  <Tooltip open>
+                  <Tooltip>
                     <TooltipTrigger asChild>
                       <Button
                         type="button"
