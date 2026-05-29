@@ -1,21 +1,23 @@
-import { FlatCompat } from '@eslint/eslintrc';
-import { dirname } from 'path';
-import { fileURLToPath } from 'url';
-import js from '@eslint/js';
-import { fixupConfigRules } from '@eslint/compat';
 import nx from '@nx/eslint-plugin';
 import baseConfig from '../../eslint.config.mjs';
-const compat = new FlatCompat({
-  baseDirectory: dirname(fileURLToPath(import.meta.url)),
-  recommendedConfig: js.configs.recommended,
-});
+import nextConfig from 'eslint-config-next';
+import nextCoreWebVitalsConfig from 'eslint-config-next/core-web-vitals';
 
 export default [
-  ...fixupConfigRules(compat.extends('next')),
-  ...fixupConfigRules(compat.extends('next/core-web-vitals')),
+  ...nextConfig,
+  ...nextCoreWebVitalsConfig,
   ...baseConfig,
   ...nx.configs['flat/react-typescript'],
   {
     ignores: ['.next/**/*'],
+  },
+  {
+    rules: {
+      'react-hooks/set-state-in-effect': 'off',
+      'react-hooks/immutability': 'off',
+      'react-hooks/use-memo': 'off',
+      'react-hooks/refs': 'off',
+      'react-hooks/purity': 'off',
+    },
   },
 ];
