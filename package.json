@@ -68,7 +68,7 @@
   "devDependencies": {
     "@angular-devkit/core": "^20.0.5",
     "@eslint/compat": "^1.1.1",
-    "@eslint/eslintrc": "^2.1.1",
+    "@eslint/eslintrc": "^3.3.5",
     "@eslint/js": "^9.8.0",
     "@nestjs/schematics": "^11.0.0",
     "@nestjs/testing": "^11.0.0",

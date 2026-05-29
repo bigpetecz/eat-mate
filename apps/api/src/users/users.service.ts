@@ -32,7 +32,7 @@ export class UsersService {
       .lean()
       .exec();
 
-    return { recipes };
+    return { recipes: recipes as unknown as Recipe[] };
   }
 
   async updateSettings(
@@ -205,6 +205,6 @@ export class UsersService {
       .lean()
       .exec();
 
-    return { recipes };
+    return { recipes: recipes as unknown as Recipe[] };
   }
 }

@@ -112,7 +112,7 @@ RecipeSchema.set('toJSON', {
   versionKey: false,
   transform(_, ret) {
     ret.id = ret._id;
-    delete ret._id;
+    delete (ret as unknown as { _id?: unknown })._id;
   },
 });
 RecipeSchema.set('toObject', {
@@ -120,7 +120,7 @@ RecipeSchema.set('toObject', {
   versionKey: false,
   transform(_, ret) {
     ret.id = ret._id;
-    delete ret._id;
+    delete (ret as unknown as { _id?: unknown })._id;
   },
 });
 // Pre-save hook to auto-generate slug from title (in English) if not set
