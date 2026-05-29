@@ -9,7 +9,7 @@
     ],
     "sharedGlobals": []
   },
-  "nxCloudId": "686540d819a5524f0b91401a",
+  "neverConnectToCloud": true,
   "projects": {
     "frontend": "apps/frontend",
     "api": "apps/api"
