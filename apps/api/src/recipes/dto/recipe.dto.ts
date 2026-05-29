@@ -172,6 +172,10 @@ export class RecipeIngredientDto {
 
 export class CreateRecipeDto {
   @IsString()
+  @IsOptional()
+  language?: string;
+
+  @IsString()
   @IsNotEmpty()
   author: string;
 
