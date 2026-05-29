@@ -50,3 +50,6 @@ out
 # Config
 .env.local
 google-key.json
+.claude/worktrees
+.nx/polygraph
+.nx/self-healing
