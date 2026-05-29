@@ -11,6 +11,7 @@ import { RecipeAiAuditService } from './service/recipe-ai-audit.service';
 import { OpenAIService } from '../openai/openai.service';
 import { IngredientNormalizerService } from '../ingredients/service/ingredient-normalizer.service';
 import { RecipesQueryService } from './service/recipes-query.service';
+import { TranslationModule } from '../translation/translation.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { RecipesQueryService } from './service/recipes-query.service';
       { name: 'IngredientVariant', schema: IngredientVariantSchema },
     ]),
     CloudinaryModule,
+    TranslationModule,
   ],
   controllers: [RecipesController],
   providers: [

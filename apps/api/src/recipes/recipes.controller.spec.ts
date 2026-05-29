@@ -2,12 +2,14 @@ import { BadRequestException } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { getModelToken } from '@nestjs/mongoose';
 import { Test, TestingModule } from '@nestjs/testing';
+import { Types } from 'mongoose';
 
 import { RecipesController } from './recipes.controller';
 import { Recipe } from './schema/recipe.schema';
 import { CloudinaryService } from '../cloudinary/cloudinary.service';
 import { IngredientNormalizerService } from '../ingredients/service/ingredient-normalizer.service';
 import { RecipesQueryService } from './service/recipes-query.service';
+import { GoogleTranslateService } from '../translation/google-translate.service';
 import {
   RecipePublicationEligibility,
   RecipeRightsStatus,
@@ -29,10 +31,16 @@ describe('RecipesController', () => {
   let controller: RecipesController;
   const createMock = jest.fn();
   const findByIdMock = jest.fn();
+  const findMock = jest.fn();
+  const cacheDelMock = jest.fn();
+  const translateTextMock = jest.fn();
 
   beforeEach(async () => {
     createMock.mockReset();
     findByIdMock.mockReset();
+    findMock.mockReset();
+    cacheDelMock.mockReset();
+    translateTextMock.mockReset();
 
     const module: TestingModule = await Test.createTestingModule({
       controllers: [RecipesController],
@@ -42,6 +50,7 @@ describe('RecipesController', () => {
           useValue: {
             create: createMock,
             findById: findByIdMock,
+            find: findMock,
           },
         },
         {
@@ -65,9 +74,15 @@ describe('RecipesController', () => {
           useValue: {},
         },
         {
+          provide: GoogleTranslateService,
+          useValue: {
+            translateText: translateTextMock,
+          },
+        },
+        {
           provide: CACHE_MANAGER,
           useValue: {
-            del: jest.fn(),
+            del: cacheDelMock,
           },
         },
       ],
@@ -92,7 +107,7 @@ describe('RecipesController', () => {
         sourceName: '',
         attributionText: '',
         rightsStatus: RecipeRightsStatus.Attributed,
-      })
+      }),
     ).rejects.toThrow(BadRequestException);
 
     expect(createMock).not.toHaveBeenCalled();
@@ -114,7 +129,7 @@ describe('RecipesController', () => {
         sourceName: 'BBC Good Food',
         attributionText: '',
         rightsStatus: RecipeRightsStatus.Attributed,
-      })
+      }),
     ).rejects.toThrow(BadRequestException);
 
     expect(createMock).not.toHaveBeenCalled();
@@ -138,7 +153,7 @@ describe('RecipesController', () => {
         instructions: ['Boil pasta and mix with sauce.'],
         averageRating: 0,
         ratingCount: 0,
-      })
+      }),
     );
 
     await controller.create({ userId: 'user-1' } as never, {
@@ -162,7 +177,175 @@ describe('RecipesController', () => {
         sourceName: undefined,
         sourceUrl: undefined,
         attributionText: undefined,
+      }),
+    );
+  });
+
+  it('propagates shared origin updates to linked translations', async () => {
+    const primaryId = new Types.ObjectId();
+    const translatedId = new Types.ObjectId();
+
+    const primaryRecipe = {
+      _id: primaryId,
+      author: new Types.ObjectId(),
+      language: 'en',
+      slug: 'tomato-pasta',
+      sourceType: RecipeSourceType.UserOriginal,
+      sourceName: undefined,
+      sourceUrl: undefined,
+      attributionText: undefined,
+      rightsStatus: RecipeRightsStatus.Unknown,
+      publicationEligibility: RecipePublicationEligibility.PublicAllowed,
+      translations: [{ language: 'cs', recipeId: translatedId }],
+      set: jest.fn(),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+    primaryRecipe.author = {
+      toString: () => 'user-1',
+    } as unknown as Types.ObjectId;
+
+    const translatedRecipe = {
+      _id: translatedId,
+      language: 'cs',
+      slug: 'rajcatove-testoviny',
+      translations: [{ language: 'en', recipeId: primaryId }],
+      set: jest.fn(),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+
+    findByIdMock
+      .mockReturnValueOnce({ exec: jest.fn().mockResolvedValue(primaryRecipe) })
+      .mockReturnValueOnce(
+        createLeanQueryMock({
+          _id: primaryId,
+          id: primaryId.toHexString(),
+          language: 'en',
+          slug: 'tomato-pasta',
+          title: 'Tomato Pasta',
+          description: 'A simple pasta.',
+          cookTime: 25,
+          prepTime: 10,
+          servings: 2,
+          ingredients: [],
+          instructions: ['Boil pasta.'],
+          averageRating: 0,
+          ratingCount: 0,
+        }),
+      );
+
+    findMock
+      .mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValue([primaryRecipe, translatedRecipe]),
       })
+      .mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValue([primaryRecipe, translatedRecipe]),
+      });
+
+    await controller.patchUpdate(
+      primaryId.toHexString(),
+      { userId: 'user-1' } as never,
+      {
+        cookTime: 25,
+        sourceType: RecipeSourceType.AdaptedFromExternal,
+        sourceName: 'Example Food Blog',
+        rightsStatus: RecipeRightsStatus.Attributed,
+      },
+    );
+
+    expect(translatedRecipe.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cookTime: 25,
+        sourceType: RecipeSourceType.AdaptedFromExternal,
+        sourceName: 'Example Food Blog',
+        rightsStatus: RecipeRightsStatus.Attributed,
+      }),
+    );
+    expect(translatedRecipe.save).toHaveBeenCalledTimes(1);
+    expect(cacheDelMock).toHaveBeenCalledWith(
+      'GET:/recipes/cs/recipe/rajcatove-testoviny',
+    );
+  });
+
+  it('translates only changed text fields synchronously for linked translations', async () => {
+    const primaryId = new Types.ObjectId();
+    const translatedId = new Types.ObjectId();
+
+    const primaryRecipe = {
+      _id: primaryId,
+      author: { toString: () => 'user-1' } as unknown as Types.ObjectId,
+      language: 'en',
+      slug: 'tomato-pasta',
+      sourceType: RecipeSourceType.UserOriginal,
+      sourceName: undefined,
+      sourceUrl: undefined,
+      attributionText: undefined,
+      rightsStatus: RecipeRightsStatus.Unknown,
+      publicationEligibility: RecipePublicationEligibility.PublicAllowed,
+      translations: [{ language: 'cs', recipeId: translatedId }],
+      set: jest.fn(),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+
+    const translatedRecipe = {
+      _id: translatedId,
+      language: 'cs',
+      slug: 'rajcatove-testoviny',
+      translations: [{ language: 'en', recipeId: primaryId }],
+      set: jest.fn(),
+      save: jest.fn().mockResolvedValue(undefined),
+    };
+
+    translateTextMock.mockImplementation(async (text: string, lang: string) => {
+      if (lang === 'cs') {
+        return `cs:${text}`;
+      }
+      return `en:${text}`;
+    });
+
+    findByIdMock
+      .mockReturnValueOnce({ exec: jest.fn().mockResolvedValue(primaryRecipe) })
+      .mockReturnValueOnce(
+        createLeanQueryMock({
+          _id: primaryId,
+          id: primaryId.toHexString(),
+          language: 'en',
+          slug: 'tomato-pasta',
+          title: 'Updated title',
+          description: 'Original description',
+          cookTime: 20,
+          prepTime: 10,
+          servings: 2,
+          ingredients: [],
+          instructions: ['Step one'],
+          averageRating: 0,
+          ratingCount: 0,
+        }),
+      );
+
+    findMock
+      .mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValue([primaryRecipe, translatedRecipe]),
+      })
+      .mockReturnValueOnce({
+        exec: jest.fn().mockResolvedValue([primaryRecipe, translatedRecipe]),
+      });
+
+    await controller.patchUpdate(
+      primaryId.toHexString(),
+      { userId: 'user-1' } as never,
+      {
+        title: 'Updated title',
+        cookTime: 20,
+      },
+    );
+
+    expect(translateTextMock).toHaveBeenCalledTimes(1);
+    expect(translateTextMock).toHaveBeenCalledWith('Updated title', 'cs');
+    expect(translatedRecipe.set).toHaveBeenCalledWith(
+      expect.objectContaining({
+        title: 'cs:Updated title',
+        cookTime: 20,
+      }),
     );
   });
 });

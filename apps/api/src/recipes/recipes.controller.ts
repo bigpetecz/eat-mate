@@ -41,6 +41,7 @@ import { RecipesQueryService } from './service/recipes-query.service';
 import { DeleteImageDto } from './dto/delete-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import { FilterRecipesQueryDto } from './dto/filter-recipes-query.dto';
+import { GoogleTranslateService } from '../translation/google-translate.service';
 import {
   RecipePublicationEligibility,
   RecipeRightsStatus,
@@ -69,6 +70,29 @@ type RecipeOriginFields = Pick<
   | 'publicationEligibility'
 >;
 
+type RecipeFamilySyncFields = Partial<
+  Pick<
+    Recipe,
+    | 'mealType'
+    | 'prepTime'
+    | 'cookTime'
+    | 'servings'
+    | 'ingredients'
+    | 'country'
+    | 'images'
+    | 'sourceType'
+    | 'sourceName'
+    | 'sourceUrl'
+    | 'attributionText'
+    | 'rightsStatus'
+    | 'publicationEligibility'
+  >
+>;
+
+type RecipeTextSyncFields = Partial<
+  Pick<Recipe, 'title' | 'description' | 'instructions'>
+>;
+
 @ApiTags('recipes')
 @Controller('recipes')
 export class RecipesController {
@@ -78,7 +102,8 @@ export class RecipesController {
     private readonly cloudinaryService: CloudinaryService,
     private readonly ingredientNormalizer: IngredientNormalizerService,
     private readonly recipesQueryService: RecipesQueryService,
-    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache
+    private readonly googleTranslateService: GoogleTranslateService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
   ) {}
 
   // Shared helper to populate ingredient refs and apply lean with virtuals
@@ -88,7 +113,7 @@ export class RecipesController {
         // Project only the fields needed by RecipeDto
         .select(
           'author title description language slug images cookTime prepTime servings instructions country ai sourceType sourceName sourceUrl attributionText rightsStatus publicationEligibility ' +
-            'ingredients.ingredientId ingredients.variantId ingredients.unit'
+            'ingredients.ingredientId ingredients.variantId ingredients.unit',
         )
         .populate('ingredients.ingredientId')
         .populate('ingredients.variantId')
@@ -108,7 +133,7 @@ export class RecipesController {
   }
 
   private resolveOriginFields(
-    origin: RecipeOriginFields
+    origin: RecipeOriginFields,
   ): Required<
     Pick<
       RecipeOriginFields,
@@ -127,7 +152,7 @@ export class RecipesController {
       !attributionText
     ) {
       throw new BadRequestException(
-        'Provide sourceName or attributionText when sourceType is not user_original'
+        'Provide sourceName or attributionText when sourceType is not user_original',
       );
     }
 
@@ -149,7 +174,7 @@ export class RecipesController {
       rightsStatus !== RecipeRightsStatus.Licensed
     ) {
       throw new BadRequestException(
-        'licensed_partner recipes must use rightsStatus=licensed'
+        'licensed_partner recipes must use rightsStatus=licensed',
       );
     }
 
@@ -171,7 +196,7 @@ export class RecipesController {
 
     if (!Number.isFinite(normalized)) {
       throw new BadRequestException(
-        'Ingredient quantity must be a valid number'
+        'Ingredient quantity must be a valid number',
       );
     }
 
@@ -181,7 +206,7 @@ export class RecipesController {
   private async resolveUnitObjectId(
     unitId: string | undefined,
     unitLabel: string | undefined,
-    language: string
+    language: string,
   ): Promise<Types.ObjectId | undefined> {
     if (unitId) {
       return new Types.ObjectId(unitId);
@@ -210,7 +235,7 @@ export class RecipesController {
 
   private async normalizeIngredients(
     ingredients: IngredientInput[],
-    language: string
+    language: string,
   ): Promise<NormalizedIngredientEntry[]> {
     const normalizedIngredients: NormalizedIngredientEntry[] = [];
 
@@ -220,7 +245,7 @@ export class RecipesController {
 
       if (!ingredientId && ing.name) {
         const result = await this.ingredientNormalizer.findOrCreateVariant(
-          ing.name
+          ing.name,
         );
         ingredientId = result.ingredientId;
         variantId = result.variantId;
@@ -228,7 +253,7 @@ export class RecipesController {
 
       if (!ingredientId) {
         throw new BadRequestException(
-          'Ingredient must have a name or ingredientId'
+          'Ingredient must have a name or ingredientId',
         );
       }
 
@@ -241,7 +266,7 @@ export class RecipesController {
       const unitObjectId = await this.resolveUnitObjectId(
         ing.unitId,
         ing.unit,
-        language
+        language,
       );
       if (unitObjectId) {
         ingredientEntry.unit = unitObjectId;
@@ -253,18 +278,181 @@ export class RecipesController {
     return normalizedIngredients;
   }
 
+  private buildFamilySyncFields(
+    updateRecipeDto: UpdateRecipeDto,
+    normalizedIngredients: NormalizedIngredientEntry[] | undefined,
+    nextOriginFields: ReturnType<RecipesController['resolveOriginFields']>,
+  ): RecipeFamilySyncFields {
+    const syncFields: RecipeFamilySyncFields = {
+      ...nextOriginFields,
+    };
+
+    if (updateRecipeDto.prepTime !== undefined) {
+      syncFields.prepTime = updateRecipeDto.prepTime;
+    }
+    if (updateRecipeDto.cookTime !== undefined) {
+      syncFields.cookTime = updateRecipeDto.cookTime;
+    }
+    if (updateRecipeDto.servings !== undefined) {
+      syncFields.servings = updateRecipeDto.servings;
+    }
+    if (normalizedIngredients !== undefined) {
+      syncFields.ingredients = normalizedIngredients as Recipe['ingredients'];
+    }
+    if (updateRecipeDto.country !== undefined) {
+      syncFields.country = updateRecipeDto.country;
+    }
+
+    return syncFields;
+  }
+
+  private async resolveRecipeFamily(recipe: Recipe): Promise<Recipe[]> {
+    const knownIds = new Set<string>([String(recipe._id)]);
+
+    for (const ref of recipe.translations || []) {
+      knownIds.add(String(ref.recipeId));
+    }
+
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const objectIds = [...knownIds].map((id) => new Types.ObjectId(id));
+      const directlyLinked = await this.recipeModel
+        .find({
+          $or: [
+            { _id: { $in: objectIds } },
+            { 'translations.recipeId': { $in: objectIds } },
+          ],
+        })
+        .exec();
+
+      for (const candidate of directlyLinked) {
+        const candidateId = String(candidate._id);
+        if (!knownIds.has(candidateId)) {
+          knownIds.add(candidateId);
+          changed = true;
+        }
+        for (const ref of candidate.translations || []) {
+          const refId = String(ref.recipeId);
+          if (!knownIds.has(refId)) {
+            knownIds.add(refId);
+            changed = true;
+          }
+        }
+      }
+    }
+
+    return this.recipeModel
+      .find({ _id: { $in: [...knownIds].map((id) => new Types.ObjectId(id)) } })
+      .exec();
+  }
+
+  private extractTextSyncFields(
+    updateRecipeDto: UpdateRecipeDto,
+  ): RecipeTextSyncFields {
+    const textSyncFields: RecipeTextSyncFields = {};
+
+    if (updateRecipeDto.title !== undefined) {
+      textSyncFields.title = updateRecipeDto.title;
+    }
+    if (updateRecipeDto.description !== undefined) {
+      textSyncFields.description = updateRecipeDto.description;
+    }
+    if (updateRecipeDto.instructions !== undefined) {
+      textSyncFields.instructions = updateRecipeDto.instructions;
+    }
+
+    return textSyncFields;
+  }
+
+  private async getTranslatedTextSyncFields(
+    textSyncFields: RecipeTextSyncFields,
+    sourceLanguage: string,
+    targetLanguage: string,
+  ): Promise<RecipeTextSyncFields> {
+    const hasTextUpdates =
+      textSyncFields.title !== undefined ||
+      textSyncFields.description !== undefined ||
+      textSyncFields.instructions !== undefined;
+
+    if (!hasTextUpdates) {
+      return {};
+    }
+
+    if (sourceLanguage === targetLanguage) {
+      return textSyncFields;
+    }
+
+    const translated: RecipeTextSyncFields = {};
+
+    if (textSyncFields.title !== undefined) {
+      translated.title = await this.googleTranslateService.translateText(
+        textSyncFields.title,
+        targetLanguage,
+      );
+    }
+
+    if (textSyncFields.description !== undefined) {
+      translated.description = await this.googleTranslateService.translateText(
+        textSyncFields.description,
+        targetLanguage,
+      );
+    }
+
+    if (textSyncFields.instructions !== undefined) {
+      translated.instructions = await Promise.all(
+        textSyncFields.instructions.map((instruction) =>
+          this.googleTranslateService.translateText(
+            instruction,
+            targetLanguage,
+          ),
+        ),
+      );
+    }
+
+    return translated;
+  }
+
+  private async syncRecipeFamily(
+    recipe: Recipe,
+    syncFields: RecipeFamilySyncFields,
+    textSyncFields: RecipeTextSyncFields = {},
+  ) {
+    const family = await this.resolveRecipeFamily(recipe);
+    for (const member of family) {
+      if (String(member._id) === String(recipe._id)) {
+        continue;
+      }
+
+      const translatedTextSyncFields = await this.getTranslatedTextSyncFields(
+        textSyncFields,
+        recipe.language,
+        member.language,
+      );
+
+      member.set({
+        ...syncFields,
+        ...translatedTextSyncFields,
+      });
+      await member.save();
+      await this.cacheManager.del(
+        `GET:/recipes/${member.language}/recipe/${member.slug}`,
+      );
+    }
+  }
+
   // Create a new recipe (optionally as a translation of another recipe)
   @UseGuards(JwtAuthGuard)
   @Post()
   @ApiCreatedResponse({ type: RecipeDto })
   async create(
     @UserDecorator() user: JwtUser,
-    @Body() createRecipeDto: CreateRecipeDto & { translationOf?: string }
+    @Body() createRecipeDto: CreateRecipeDto & { translationOf?: string },
   ) {
     const author = user.userId;
     const normalizedIngredients = await this.normalizeIngredients(
       createRecipeDto.ingredients,
-      createRecipeDto.language ?? 'en'
+      createRecipeDto.language ?? 'en',
     );
     const originFields = this.resolveOriginFields(createRecipeDto);
     // Build the data object for saving (do not overwrite the DTO)
@@ -278,7 +466,7 @@ export class RecipesController {
     const saved = await this.recipeModel.create(recipeData);
     // Populate and lean with virtuals
     const result = await this.withPopulateAndLean(
-      this.recipeModel.findById(saved._id)
+      this.recipeModel.findById(saved._id),
     ).exec();
     if (!result) throw new InternalServerErrorException();
     // Transform to DTO
@@ -303,7 +491,7 @@ export class RecipesController {
     const translations = await this.withPopulateAndLean(
       this.recipeModel.find({
         _id: { $in: (recipe.translations || []).map((t) => t.recipeId) },
-      })
+      }),
     ).exec();
     return plainToInstance(RecipeDto, translations);
   }
@@ -320,7 +508,7 @@ export class RecipesController {
   @ApiOkResponse({ type: [RecipeDto] })
   async filterRecipes(
     @Param('language') language: string,
-    @Query() query: FilterRecipesQueryDto
+    @Query() query: FilterRecipesQueryDto,
   ) {
     return this.recipesQueryService.filter(language, query);
   }
@@ -332,7 +520,7 @@ export class RecipesController {
   @ApiOkResponse({ type: RecipeDto })
   async findBySlug(
     @Param('language') language: string,
-    @Param('slug') slug: string
+    @Param('slug') slug: string,
   ): Promise<RecipeDto> {
     return this.recipesQueryService.findBySlug(language, slug);
   }
@@ -345,7 +533,7 @@ export class RecipesController {
       throw new BadRequestException('Invalid ID');
     }
     const result = await this.withPopulateAndLean(
-      this.recipeModel.findById(id)
+      this.recipeModel.findById(id),
     ).exec();
     if (!result) {
       throw new NotFoundException('Recipe not found');
@@ -360,7 +548,7 @@ export class RecipesController {
   async patchUpdate(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
-    @Body() updateRecipeDto: UpdateRecipeDto
+    @Body() updateRecipeDto: UpdateRecipeDto,
   ) {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid ID');
@@ -392,15 +580,22 @@ export class RecipesController {
         updateRecipeDto.publicationEligibility ?? recipe.publicationEligibility,
     });
 
-    const { ingredients: _rawIngredients, ...restUpdateRecipeDto } =
-      updateRecipeDto;
+    const restUpdateRecipeDto = { ...updateRecipeDto };
+    delete restUpdateRecipeDto.ingredients;
 
     const normalizedIngredients = updateRecipeDto.ingredients
       ? await this.normalizeIngredients(
           updateRecipeDto.ingredients,
-          recipe.language
+          recipe.language,
         )
       : undefined;
+    const textSyncFields = this.extractTextSyncFields(updateRecipeDto);
+
+    const familySyncFields = this.buildFamilySyncFields(
+      updateRecipeDto,
+      normalizedIngredients,
+      nextOriginFields,
+    );
 
     recipe.set({
       ...restUpdateRecipeDto,
@@ -408,15 +603,16 @@ export class RecipesController {
       ...nextOriginFields,
     });
     await recipe.save();
+    await this.syncRecipeFamily(recipe, familySyncFields, textSyncFields);
     const result = await this.withPopulateAndLean(
-      this.recipeModel.findById(recipe._id)
+      this.recipeModel.findById(recipe._id),
     ).exec();
     if (!result) {
       throw new InternalServerErrorException();
     }
     // Invalidate cache for this recipe
     await this.cacheManager.del(
-      `GET:/recipes/${result.language}/recipe/${result.slug}`
+      `GET:/recipes/${result.language}/recipe/${result.slug}`,
     );
     return result;
   }
@@ -442,7 +638,7 @@ export class RecipesController {
     await recipe.deleteOne();
     // Invalidate cache for this recipe
     await this.cacheManager.del(
-      `GET:/recipes/${recipe.language}/recipe/${recipe.slug}`
+      `GET:/recipes/${recipe.language}/recipe/${recipe.slug}`,
     );
     return { message: 'Recipe deleted' };
   }
@@ -461,7 +657,7 @@ export class RecipesController {
     @UserDecorator() user: JwtUser,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    @UploadedFiles() files: Express.Multer.File[]
+    @UploadedFiles() files: Express.Multer.File[],
   ): Promise<{ images: string[] }> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid ID');
@@ -484,12 +680,13 @@ export class RecipesController {
     for (const file of files) {
       const uploadResult = await this.cloudinaryService.uploadImageBuffer(
         file.buffer,
-        `${id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`
+        `${id}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       );
       uploadedUrls.push(uploadResult.secure_url);
     }
     recipe.images = [...(recipe.images || []), ...uploadedUrls];
     await recipe.save();
+    await this.syncRecipeFamily(recipe, { images: recipe.images });
     return { images: recipe.images };
   }
 
@@ -504,7 +701,7 @@ export class RecipesController {
   async deleteImage(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
-    @Body() body: DeleteImageDto
+    @Body() body: DeleteImageDto,
   ) {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid ID');
@@ -525,6 +722,7 @@ export class RecipesController {
     }
     recipe.images = (recipe.images || []).filter((img) => img !== url);
     await recipe.save();
+    await this.syncRecipeFamily(recipe, { images: recipe.images });
     return { images: recipe.images };
   }
 
@@ -539,7 +737,7 @@ export class RecipesController {
   async updateImage(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
-    @Body() body: UpdateImageDto
+    @Body() body: UpdateImageDto,
   ) {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid ID');
@@ -553,9 +751,10 @@ export class RecipesController {
     }
     const { oldUrl, newUrl } = body;
     recipe.images = (recipe.images || []).map((img) =>
-      img === oldUrl ? newUrl : img
+      img === oldUrl ? newUrl : img,
     );
     await recipe.save();
+    await this.syncRecipeFamily(recipe, { images: recipe.images });
     return { images: recipe.images };
   }
 
@@ -573,7 +772,7 @@ export class RecipesController {
   async rateRecipe(
     @Param('id') id: string,
     @UserDecorator() user: JwtUser,
-    @Body() rateDto: RateRecipeDto
+    @Body() rateDto: RateRecipeDto,
   ): Promise<{ averageRating: number; ratingCount: number }> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid recipe ID');
@@ -587,7 +786,7 @@ export class RecipesController {
     }
     // Check for duplicate rating
     const alreadyRated = recipe.ratings.some(
-      (r) => r.user.toString() === user.userId
+      (r) => r.user.toString() === user.userId,
     );
     if (alreadyRated) {
       throw new BadRequestException('You have already rated this recipe.');
@@ -623,7 +822,7 @@ export class RecipesController {
     },
   })
   async getRatings(
-    @Param('id') id: string
+    @Param('id') id: string,
   ): Promise<{ user: string; value: number }[]> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid recipe ID');
@@ -651,7 +850,7 @@ export class RecipesController {
     },
   })
   async getAverageRating(
-    @Param('id') id: string
+    @Param('id') id: string,
   ): Promise<{ averageRating: number; ratingCount: number }> {
     if (!isValidObjectId(id)) {
       throw new BadRequestException('Invalid recipe ID');

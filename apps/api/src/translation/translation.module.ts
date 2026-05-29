@@ -21,5 +21,6 @@ import {
     ]),
   ],
   providers: [GoogleTranslateService, TranslationScheduler],
+  exports: [GoogleTranslateService],
 })
 export class TranslationModule {}
