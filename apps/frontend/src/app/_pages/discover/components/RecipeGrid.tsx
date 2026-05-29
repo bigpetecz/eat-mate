@@ -9,6 +9,8 @@ interface RecipeGridProps {
   error: string | null;
   loadingText?: string;
   emptyText?: string;
+  sourceContext?: 'discover' | 'favorites' | 'my-recipes';
+  returnTo?: string;
 }
 
 export const RecipeGrid = ({
@@ -17,6 +19,8 @@ export const RecipeGrid = ({
   error,
   loadingText,
   emptyText,
+  sourceContext,
+  returnTo,
 }: RecipeGridProps) => (
   <div className="max-w-5xl mx-auto px-2 md:px-0 py-10">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -38,7 +42,14 @@ export const RecipeGrid = ({
           {emptyText || 'No recipes found. Try adjusting your filters.'}
         </Card>
       ) : (
-        recipes.map((recipe) => <RecipeCard key={recipe._id} recipe={recipe} />)
+        recipes.map((recipe) => (
+          <RecipeCard
+            key={recipe._id}
+            recipe={recipe}
+            sourceContext={sourceContext}
+            returnTo={returnTo}
+          />
+        ))
       )}
     </div>
   </div>

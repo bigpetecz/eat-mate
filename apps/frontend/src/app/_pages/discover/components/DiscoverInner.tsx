@@ -1,7 +1,7 @@
 'use client';
 import { FC } from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
+import { useParams, usePathname, useSearchParams } from 'next/navigation';
 import type { Recipe, RecipeSourceType } from '@/types/recipe';
 import { apiClient } from '@/app/api-client';
 import { toApiClientError } from '@/lib/api-error';
@@ -29,6 +29,7 @@ interface DiscoverFilters {
 
 export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
   const { language } = useParams();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
 
   const getDefaultValuesFromParams = (): DiscoverFilters => {
@@ -40,7 +41,7 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
     const getRange = (
       key: string,
       defMin: number,
-      defMax: number
+      defMax: number,
     ): [number, number] => {
       const min = Number(searchParams.get(key + 'Min') ?? defMin);
       const max = Number(searchParams.get(key + 'Max') ?? defMax);
@@ -63,6 +64,11 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
     };
   };
   const defaultValues = useMemo(getDefaultValuesFromParams, [searchParams]);
+  const returnTo = useMemo(() => {
+    const currentQuery = searchParams.toString();
+
+    return currentQuery ? `${pathname}?${currentQuery}` : pathname;
+  }, [pathname, searchParams]);
 
   // Recipe state
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -99,7 +105,7 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
       try {
         const params = buildSearchParams(filters);
         const res = await apiClient.get<Recipe[]>(
-          `/recipes/${language}/filter?${params.toString()}`
+          `/recipes/${language}/filter?${params.toString()}`,
         );
         setRecipes(Array.isArray(res.data) ? res.data : []);
       } catch (e: unknown) {
@@ -107,13 +113,13 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
         setError(
           apiError.message ||
             dictionary.failedToLoadRecipes ||
-            'Failed to load recipes.'
+            'Failed to load recipes.',
         );
       } finally {
         setLoading(false);
       }
     },
-    [dictionary.failedToLoadRecipes, language]
+    [dictionary.failedToLoadRecipes, language],
   );
 
   // Fetch recipes on mount (with current filters, debounced)
@@ -205,6 +211,8 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
         recipes={recipes}
         loading={loading}
         error={error}
+        sourceContext="discover"
+        returnTo={returnTo}
         loadingText={dictionary['Loading recipes...'] || 'Loading recipes...'}
         emptyText={
           dictionary.noRecipesFound ||

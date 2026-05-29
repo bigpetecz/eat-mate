@@ -1,4 +1,6 @@
 import { notFound } from 'next/navigation';
+import Link from 'next/link';
+import { ArrowLeft } from 'lucide-react';
 
 import Image from 'next/image';
 import { Card } from '@/components/ui/card';
@@ -8,6 +10,7 @@ import {
   specialAttributes,
 } from '@/lib/recipe-labels';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { RecipeActions } from '@/components/recipe/recipe-actions';
 import { RecipeRating } from '@/components/recipe/recipe-rating';
 import { ServingsIngredients } from '@/components/recipe/servings-ingredients';
@@ -32,18 +35,110 @@ import {
   ServerApiError,
 } from '@/lib/server-api';
 import { User } from '@/app/auth/authStore';
+import { getLocalizedRoute, Locale } from '@/i18n';
+
+type DetailSource = 'discover' | 'favorites' | 'my-recipes';
+
+function getSingleSearchValue(
+  value: string | string[] | undefined,
+): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+
+  return undefined;
+}
+
+function getDetailSource(value: string | undefined): DetailSource | null {
+  if (!value) {
+    return null;
+  }
+
+  if (value === 'discover' || value === 'favorites' || value === 'my-recipes') {
+    return value;
+  }
+
+  return null;
+}
+
+function getSafeReturnTo(
+  returnTo: string | undefined,
+  language: keyof typeof recipeDetailDictionary,
+  currentPath: string,
+): string | null {
+  if (!returnTo) {
+    return null;
+  }
+
+  if (!returnTo.startsWith('/')) {
+    return null;
+  }
+
+  if (returnTo.startsWith('//')) {
+    return null;
+  }
+
+  if (!returnTo.startsWith(`/${language}/`)) {
+    return null;
+  }
+
+  if (returnTo === currentPath) {
+    return null;
+  }
+
+  return returnTo;
+}
 
 export default async function RecipePage({
   params,
+  searchParams,
 }: {
   params: Promise<{
     slug: string;
     language: keyof typeof recipeDetailDictionary;
   }>;
+  searchParams: Promise<{
+    source?: string | string[];
+    returnTo?: string | string[];
+  }>;
 }) {
   let recipe: Recipe | null = null;
-  const { slug, language } = await params;
+  const [{ slug, language }, detailSearchParams] = await Promise.all([
+    params,
+    searchParams,
+  ]);
   const dict = recipeDetailDictionary[language] || recipeDetailDictionary['en'];
+  const source = getDetailSource(
+    getSingleSearchValue(detailSearchParams.source),
+  );
+  const currentRecipePath = getLocalizedRoute(
+    'recipeDetail',
+    language as Locale,
+    slug,
+  );
+  const returnTo = getSafeReturnTo(
+    getSingleSearchValue(detailSearchParams.returnTo),
+    language,
+    currentRecipePath,
+  );
+  const discoverRoute = getLocalizedRoute('discover', language as Locale, {});
+  const sourceRoutes: Record<DetailSource, string> = {
+    discover: discoverRoute,
+    favorites: getLocalizedRoute('favorites', language as Locale),
+    'my-recipes': getLocalizedRoute('myRecipes', language as Locale),
+  };
+  const backHref = returnTo || (source ? sourceRoutes[source] : discoverRoute);
+  const backLabelBySource: Record<DetailSource, string> = {
+    discover: dict.backToDiscover,
+    favorites: dict.backToFavorites,
+    'my-recipes': dict.backToMyRecipes,
+  };
+  const backLabel = source ? backLabelBySource[source] : dict.backToDiscover;
+
   try {
     recipe = await fetchWithAuth(`/recipes/${language}/recipe/${slug}`, {
       method: 'GET',
@@ -65,6 +160,19 @@ export default async function RecipePage({
   return (
     <div className="bg-muted">
       <div className="max-w-6xl mx-auto px-4 pb-8">
+        <div className="pt-4 pb-3 md:pt-6 md:pb-4">
+          <Button
+            asChild
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 text-muted-foreground hover:text-foreground"
+          >
+            <Link href={backHref} aria-label={backLabel}>
+              <ArrowLeft className="w-4 h-4" />
+              <span>{backLabel}</span>
+            </Link>
+          </Button>
+        </div>
         {/* Hero section */}
         <div className="rounded-lg p-6 flex flex-col md:flex-row gap-8 items-center bg-muted min-h-[25rem]">
           {/* Image left, content right */}

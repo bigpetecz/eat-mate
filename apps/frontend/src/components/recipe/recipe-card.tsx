@@ -21,25 +21,47 @@ import { RecipeOriginBadge } from './recipe-origin-badge';
 
 export interface RecipeCardProps {
   recipe: Recipe;
+  sourceContext?: 'discover' | 'favorites' | 'my-recipes';
+  returnTo?: string;
 }
 
-export function RecipeCard({ recipe }: RecipeCardProps) {
+export function RecipeCard({
+  recipe,
+  sourceContext,
+  returnTo,
+}: RecipeCardProps) {
   const params = useParams();
   const language =
     typeof params?.language === 'string' ? params.language : 'en';
   const originTheme = getRecipeOriginTheme(recipe.sourceType);
   const originSummary = getRecipeOriginSummary(recipe, language);
   const showsOrigin = hasRecipeOrigin(recipe);
+  const recipeDetailUrl = getLocalizedRoute(
+    'recipeDetail',
+    language as Locale,
+    recipe.slug,
+  );
+  const detailParams = new URLSearchParams();
+
+  if (sourceContext) {
+    detailParams.set('source', sourceContext);
+  }
+
+  if (returnTo) {
+    detailParams.set('returnTo', returnTo);
+  }
+
+  const recipeHref =
+    detailParams.size > 0
+      ? `${recipeDetailUrl}?${detailParams.toString()}`
+      : recipeDetailUrl;
 
   return (
-    <Link
-      href={getLocalizedRoute('recipeDetail', language as Locale, recipe.slug)}
-      className="contents"
-    >
+    <Link href={recipeHref} className="contents">
       <Card
         className={cn(
           'relative overflow-hidden pt-0 pb-2 px-0 transition-colors',
-          originTheme?.cardClassName
+          originTheme?.cardClassName,
         )}
       >
         {showsOrigin && originTheme ? (
@@ -47,7 +69,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
             aria-hidden="true"
             className={cn(
               'absolute inset-y-0 left-0 z-10 w-1',
-              originTheme.accentClassName
+              originTheme.accentClassName,
             )}
           />
         ) : null}
