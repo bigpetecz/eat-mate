@@ -1,10 +1,25 @@
 import { Card } from '@/components/ui/card';
 import { RecipeFilters } from '../RecipeFilters';
+import type { RecipeSourceType } from '@/types/recipe';
+
+interface DiscoverFilterValues {
+  search: string;
+  mealType: string;
+  sourceType: '' | RecipeSourceType;
+  diets: string[];
+  techniques: string[];
+  specialAttributes: string[];
+  difficulty: string;
+  country: string;
+  cookTime: [number, number];
+  calories: [number, number];
+  estimatedCost: [number, number];
+}
 
 interface FiltersCardProps {
-  defaultValues: any;
+  defaultValues: DiscoverFilterValues;
   dict: Record<string, string>;
-  onReset: () => void;
+  onReset: (values: DiscoverFilterValues) => void;
   onSearchSubmit: (values: Record<string, unknown>) => void;
   onFiltersSubmit: (values: Record<string, unknown>) => void;
 }

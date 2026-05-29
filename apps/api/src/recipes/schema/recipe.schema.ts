@@ -2,7 +2,13 @@ import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import * as mongoose from 'mongoose';
 import { Document } from 'mongoose';
 import { User } from '../../users/user.schema';
-import { WinePairing, Technique } from '../recipe.enums';
+import {
+  WinePairing,
+  Technique,
+  RecipeSourceType,
+  RecipeRightsStatus,
+  RecipePublicationEligibility,
+} from '../recipe.enums';
 import {
   RecipeIngredient,
   RecipeIngredientSchema,
@@ -76,6 +82,36 @@ export class Recipe extends Document {
   @Prop()
   country: string;
 
+  @Prop({
+    type: String,
+    enum: RecipeSourceType,
+    default: RecipeSourceType.UserOriginal,
+  })
+  sourceType: RecipeSourceType;
+
+  @Prop({ trim: true })
+  sourceName?: string;
+
+  @Prop({ trim: true })
+  sourceUrl?: string;
+
+  @Prop({ trim: true })
+  attributionText?: string;
+
+  @Prop({
+    type: String,
+    enum: RecipeRightsStatus,
+    default: RecipeRightsStatus.Unknown,
+  })
+  rightsStatus: RecipeRightsStatus;
+
+  @Prop({
+    type: String,
+    enum: RecipePublicationEligibility,
+    default: RecipePublicationEligibility.PublicAllowed,
+  })
+  publicationEligibility: RecipePublicationEligibility;
+
   @Prop({ type: String, enum: WinePairing, required: false })
   winePairing?: WinePairing;
 
@@ -136,6 +172,18 @@ RecipeSchema.pre('validate', function (next) {
   // Ensure language is set
   if (!this.language) {
     this.language = 'en';
+  }
+  if (!this.sourceType) {
+    this.sourceType = RecipeSourceType.UserOriginal;
+  }
+  if (!this.rightsStatus) {
+    this.rightsStatus = RecipeRightsStatus.Unknown;
+  }
+  if (!this.publicationEligibility) {
+    this.publicationEligibility =
+      this.sourceType === RecipeSourceType.UserOriginal
+        ? RecipePublicationEligibility.PublicAllowed
+        : RecipePublicationEligibility.ReviewRequired;
   }
   next();
 });

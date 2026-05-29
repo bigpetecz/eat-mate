@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { RecipeActions } from '@/components/recipe/recipe-actions';
 import { RecipeRating } from '@/components/recipe/recipe-rating';
 import { ServingsIngredients } from '@/components/recipe/servings-ingredients';
+import { RecipeOriginPanel } from '@/components/recipe/recipe-origin-panel';
 
 export const DAILY_VALUES = {
   calories: 2000,
@@ -102,6 +103,12 @@ export default async function RecipePage({
             <p className="text-lg text-muted-foreground mt-1">
               {recipe.description}
             </p>
+            <RecipeOriginPanel
+              recipe={recipe}
+              language={language}
+              title={dict.recipeOrigin}
+              sourceLinkLabel={dict.viewOriginalSource}
+            />
             <div className="flex flex-wrap gap-4 mt-2">
               {recipe.country && (
                 <span className="flex items-center gap-1 text-sm">

@@ -57,13 +57,20 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({
       }
     };
     fetchRecipe();
-  }, [slug]);
+  }, [language, slug]);
 
   // Helper: map file name to image URL for originals
   const fileNameToUrl = (name: string) => {
     if (!recipe?.images) return undefined;
     return recipe.images.find((url) => url.split('/').pop() === name);
   };
+
+  const createPayload = (data: RecipeFormValues) => ({
+    ...data,
+    sourceName: data.sourceName.trim() || undefined,
+    sourceUrl: data.sourceUrl.trim() || undefined,
+    attributionText: data.attributionText.trim() || undefined,
+  });
 
   const handleRemoveImage = (fileName: string) => {
     const url = fileNameToUrl(fileName);
@@ -79,15 +86,21 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({
         toast.error('User not authenticated');
         return;
       }
+
+      const recipeId = recipe?._id || recipe?.id;
+      if (!recipeId) {
+        toast.error('Recipe ID is missing. Please reload the page.');
+        return;
+      }
+
       // 1. Update recipe (without images)
-      const response = await apiClient.put(`/recipes/${recipe?._id}`, {
-        ...data,
+      const response = await apiClient.put(`/recipes/${recipeId}`, {
+        ...createPayload(data),
         author: user._id,
-        images: [],
       });
       // 2. Delete removed images
       for (const url of removedImages) {
-        await apiClient.delete(`/recipes/${recipe?._id}/images`, {
+        await apiClient.delete(`/recipes/${recipeId}/images`, {
           data: { url },
         });
       }
@@ -98,7 +111,7 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({
       if (newUploads.length > 0) {
         const formData = new FormData();
         newUploads.forEach((file) => formData.append('files', file));
-        await apiClient.post(`/recipes/${recipe?._id}/images`, formData, {
+        await apiClient.post(`/recipes/${recipeId}/images`, formData, {
           headers: { 'Content-Type': 'multipart/form-data' },
         });
       }
@@ -131,10 +144,23 @@ const EditRecipeForm: React.FC<EditRecipeFormProps> = ({
         title: recipe.title,
         description: recipe.description ?? '',
         country: recipe.country ?? '',
+        sourceType: recipe.sourceType ?? 'user_original',
+        sourceName: recipe.sourceName ?? '',
+        sourceUrl: recipe.sourceUrl ?? '',
+        attributionText: recipe.attributionText ?? '',
+        rightsStatus: recipe.rightsStatus ?? 'unknown',
         prepTime: recipe.prepTime ?? 0,
         cookTime: recipe.cookTime ?? 0,
         servings: recipe.servings ?? 0,
-        ingredients: recipe.ingredients ?? [],
+        ingredients: (recipe.ingredients ?? []).map((ingredient) => ({
+          ...ingredient,
+          name: ingredient.name ?? '',
+          quantity:
+            ingredient.quantity === null || ingredient.quantity === undefined
+              ? ''
+              : String(ingredient.quantity),
+          unit: ingredient.unit ?? '',
+        })),
         instructions: recipe.instructions ?? [],
       }}
       defaultFiles={files}

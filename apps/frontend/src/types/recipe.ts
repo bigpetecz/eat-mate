@@ -4,6 +4,19 @@ export interface RecipeTranslationRef {
   recipeId: string;
 }
 
+export type RecipeSourceType =
+  | 'user_original'
+  | 'inspired_by_chef'
+  | 'adapted_from_external'
+  | 'licensed_partner';
+
+export type RecipeRightsStatus = 'unknown' | 'attributed' | 'licensed';
+
+export type RecipePublicationEligibility =
+  | 'public_allowed'
+  | 'review_required'
+  | 'blocked';
+
 export interface Recipe {
   _id?: string;
   id?: string;
@@ -20,6 +33,12 @@ export interface Recipe {
   ingredients: { name: string; quantity: string; unit: string }[];
   instructions?: string[];
   author: string;
+  sourceType?: RecipeSourceType;
+  sourceName?: string;
+  sourceUrl?: string;
+  attributionText?: string;
+  rightsStatus?: RecipeRightsStatus;
+  publicationEligibility?: RecipePublicationEligibility;
   averageRating: number;
   ratingCount: number;
   ai?: {

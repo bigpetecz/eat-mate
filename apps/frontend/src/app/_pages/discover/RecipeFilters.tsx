@@ -27,21 +27,23 @@ import {
   techniquesOptions,
   specialAttributes,
 } from '@/lib/recipe-labels';
+import type { RecipeSourceType } from '@/types/recipe';
 
 interface RecipeFiltersProps {
   defaultValues: {
     search: string;
     mealType: string;
+    sourceType: '' | RecipeSourceType;
     diets: string[];
     techniques: string[];
     specialAttributes: string[];
     difficulty: string;
     country: string;
-    cookTime: number[];
-    calories: number[];
-    estimatedCost: number[];
+    cookTime: [number, number];
+    calories: [number, number];
+    estimatedCost: [number, number];
   };
-  onReset: () => void;
+  onReset: (values: RecipeFiltersProps['defaultValues']) => void;
   onSearchSubmit: (values: Record<string, unknown>) => void;
   onFiltersSubmit: (values: Record<string, unknown>) => void;
   dict: Record<string, string>;
@@ -218,6 +220,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   // Determine if any filter (other than search) is set
   const hasActiveFilters = Boolean(
     defaultValues.mealType ||
+      defaultValues.sourceType ||
       defaultValues.difficulty ||
       defaultValues.country ||
       (defaultValues.diets && defaultValues.diets.length) ||
@@ -269,6 +272,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       filterValues.estimatedCost[1] === 30);
   const activeCount = [
     filterValues.mealType,
+    filterValues.sourceType,
     filterValues.difficulty,
     filterValues.country,
     ...(filterValues.diets || []),
@@ -280,9 +284,9 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   ].filter(Boolean).length;
 
   const handleClearAll = () => {
-    // Explicitly reset all fields to their default values, including calories
-    filtersForm.reset({
+    const clearedValues: RecipeFiltersProps['defaultValues'] = {
       ...defaultValues,
+      search: '',
       calories: [0, 2000],
       cookTime: [0, 240],
       estimatedCost: [0, 30],
@@ -290,10 +294,13 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
       techniques: [],
       specialAttributes: [],
       mealType: '',
+      sourceType: '',
       difficulty: '',
       country: '',
-    });
-    onReset();
+    };
+
+    filtersForm.reset(clearedValues);
+    onReset(clearedValues);
   };
 
   return (
@@ -390,6 +397,42 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                       {m}
                                     </SelectItem>
                                   ))}
+                                </SelectContent>
+                              </Select>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    <div className="flex flex-col w-full md:w-40">
+                      <FormField
+                        name="sourceType"
+                        control={filtersForm.control}
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>{dict['Source']}</FormLabel>
+                            <FormControl>
+                              <Select
+                                value={field.value}
+                                onValueChange={field.onChange}
+                              >
+                                <SelectTrigger className="w-full md:w-40">
+                                  <SelectValue placeholder={dict['Source']} />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="user_original">
+                                    {dict['Original']}
+                                  </SelectItem>
+                                  <SelectItem value="inspired_by_chef">
+                                    {dict['Inspired by chef']}
+                                  </SelectItem>
+                                  <SelectItem value="adapted_from_external">
+                                    {dict['Adapted']}
+                                  </SelectItem>
+                                  <SelectItem value="licensed_partner">
+                                    {dict['Licensed']}
+                                  </SelectItem>
                                 </SelectContent>
                               </Select>
                             </FormControl>

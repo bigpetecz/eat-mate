@@ -7,6 +7,7 @@
 interface DiscoverFilters {
   search: string;
   mealType: string;
+  sourceType: string;
   diets: string[];
   techniques: string[];
   difficulty: string;
@@ -21,6 +22,7 @@ function buildSearchParams(filters: DiscoverFilters): URLSearchParams {
   return new URLSearchParams({
     ...(filters.search && { search: filters.search }),
     ...(filters.mealType && { mealType: filters.mealType }),
+    ...(filters.sourceType && { sourceType: filters.sourceType }),
     ...(filters.diets.length && { diets: filters.diets.join(',') }),
     ...(filters.techniques.length && {
       techniques: filters.techniques.join(','),
@@ -42,6 +44,7 @@ function buildSearchParams(filters: DiscoverFilters): URLSearchParams {
 const defaults: DiscoverFilters = {
   search: '',
   mealType: '',
+  sourceType: '',
   diets: [],
   techniques: [],
   difficulty: '',
@@ -67,6 +70,7 @@ describe('buildSearchParams', () => {
     const params = buildSearchParams(defaults);
     expect(params.has('search')).toBe(false);
     expect(params.has('mealType')).toBe(false);
+    expect(params.has('sourceType')).toBe(false);
     expect(params.has('diets')).toBe(false);
     expect(params.has('techniques')).toBe(false);
     expect(params.has('difficulty')).toBe(false);
@@ -91,9 +95,11 @@ describe('buildSearchParams', () => {
       ...defaults,
       search: 'pizza',
       mealType: 'dinner',
+      sourceType: 'licensed_partner',
     });
     expect(params.get('search')).toBe('pizza');
     expect(params.get('mealType')).toBe('dinner');
+    expect(params.get('sourceType')).toBe('licensed_partner');
   });
 
   it('respects narrowed cookTime ranges', () => {

@@ -41,6 +41,11 @@ import { RecipesQueryService } from './service/recipes-query.service';
 import { DeleteImageDto } from './dto/delete-image.dto';
 import { UpdateImageDto } from './dto/update-image.dto';
 import { FilterRecipesQueryDto } from './dto/filter-recipes-query.dto';
+import {
+  RecipePublicationEligibility,
+  RecipeRightsStatus,
+  RecipeSourceType,
+} from './recipe.enums';
 
 interface NormalizedIngredientEntry {
   ingredientId: Types.ObjectId | string;
@@ -49,8 +54,20 @@ interface NormalizedIngredientEntry {
   unit?: Types.ObjectId;
 }
 
+type IngredientInput = CreateRecipeDto['ingredients'][number];
+
 type RecipeFindQuery = ReturnType<Model<Recipe>['find']>;
 type RecipeFindByIdQuery = ReturnType<Model<Recipe>['findById']>;
+
+type RecipeOriginFields = Pick<
+  CreateRecipeDto,
+  | 'sourceType'
+  | 'sourceName'
+  | 'sourceUrl'
+  | 'attributionText'
+  | 'rightsStatus'
+  | 'publicationEligibility'
+>;
 
 @ApiTags('recipes')
 @Controller('recipes')
@@ -70,7 +87,7 @@ export class RecipesController {
       query
         // Project only the fields needed by RecipeDto
         .select(
-          'author title description language slug images cookTime prepTime servings instructions country ai ' +
+          'author title description language slug images cookTime prepTime servings instructions country ai sourceType sourceName sourceUrl attributionText rightsStatus publicationEligibility ' +
             'ingredients.ingredientId ingredients.variantId ingredients.unit'
         )
         .populate('ingredients.ingredientId')
@@ -78,6 +95,162 @@ export class RecipesController {
         .populate('ingredients.unit', 'code')
         .lean({ virtuals: true })
     );
+  }
+
+  private trimOptionalString(value?: string) {
+    if (typeof value !== 'string') {
+      return undefined;
+    }
+
+    const trimmed = value.trim();
+
+    return trimmed.length > 0 ? trimmed : undefined;
+  }
+
+  private resolveOriginFields(
+    origin: RecipeOriginFields
+  ): Required<
+    Pick<
+      RecipeOriginFields,
+      'sourceType' | 'rightsStatus' | 'publicationEligibility'
+    >
+  > &
+    Pick<RecipeOriginFields, 'sourceName' | 'sourceUrl' | 'attributionText'> {
+    const sourceType = origin.sourceType ?? RecipeSourceType.UserOriginal;
+    const sourceName = this.trimOptionalString(origin.sourceName);
+    const sourceUrl = this.trimOptionalString(origin.sourceUrl);
+    const attributionText = this.trimOptionalString(origin.attributionText);
+
+    if (
+      sourceType !== RecipeSourceType.UserOriginal &&
+      !sourceName &&
+      !attributionText
+    ) {
+      throw new BadRequestException(
+        'Provide sourceName or attributionText when sourceType is not user_original'
+      );
+    }
+
+    if (sourceType === RecipeSourceType.UserOriginal) {
+      return {
+        sourceType,
+        sourceName: undefined,
+        sourceUrl: undefined,
+        attributionText: undefined,
+        rightsStatus: RecipeRightsStatus.Unknown,
+        publicationEligibility: RecipePublicationEligibility.PublicAllowed,
+      };
+    }
+
+    const rightsStatus = origin.rightsStatus ?? RecipeRightsStatus.Unknown;
+
+    if (
+      sourceType === RecipeSourceType.LicensedPartner &&
+      rightsStatus !== RecipeRightsStatus.Licensed
+    ) {
+      throw new BadRequestException(
+        'licensed_partner recipes must use rightsStatus=licensed'
+      );
+    }
+
+    return {
+      sourceType,
+      sourceName,
+      sourceUrl,
+      attributionText,
+      rightsStatus,
+      publicationEligibility:
+        origin.publicationEligibility ??
+        RecipePublicationEligibility.ReviewRequired,
+    };
+  }
+
+  private parseQuantity(value: unknown): number {
+    const normalized =
+      typeof value === 'string' ? Number(value.trim()) : Number(value);
+
+    if (!Number.isFinite(normalized)) {
+      throw new BadRequestException(
+        'Ingredient quantity must be a valid number'
+      );
+    }
+
+    return normalized;
+  }
+
+  private async resolveUnitObjectId(
+    unitId: string | undefined,
+    unitLabel: string | undefined,
+    language: string
+  ): Promise<Types.ObjectId | undefined> {
+    if (unitId) {
+      return new Types.ObjectId(unitId);
+    }
+
+    const normalizedUnit = unitLabel?.trim();
+    if (!normalizedUnit) {
+      return undefined;
+    }
+
+    const localizedField = `locales.${language}`;
+    const unitDoc = await this.unitModel
+      .findOne({
+        $or: [
+          { code: normalizedUnit },
+          { defaultName: normalizedUnit },
+          { [localizedField]: normalizedUnit },
+          { 'locales.en': normalizedUnit },
+          { 'locales.cs': normalizedUnit },
+        ],
+      })
+      .exec();
+
+    return unitDoc?._id as Types.ObjectId | undefined;
+  }
+
+  private async normalizeIngredients(
+    ingredients: IngredientInput[],
+    language: string
+  ): Promise<NormalizedIngredientEntry[]> {
+    const normalizedIngredients: NormalizedIngredientEntry[] = [];
+
+    for (const ing of ingredients) {
+      let ingredientId = ing.ingredientId;
+      let variantId: string | undefined;
+
+      if (!ingredientId && ing.name) {
+        const result = await this.ingredientNormalizer.findOrCreateVariant(
+          ing.name
+        );
+        ingredientId = result.ingredientId;
+        variantId = result.variantId;
+      }
+
+      if (!ingredientId) {
+        throw new BadRequestException(
+          'Ingredient must have a name or ingredientId'
+        );
+      }
+
+      const ingredientEntry: NormalizedIngredientEntry = {
+        ingredientId,
+        variantId,
+        quantity: this.parseQuantity(ing.quantity),
+      };
+
+      const unitObjectId = await this.resolveUnitObjectId(
+        ing.unitId,
+        ing.unit,
+        language
+      );
+      if (unitObjectId) {
+        ingredientEntry.unit = unitObjectId;
+      }
+
+      normalizedIngredients.push(ingredientEntry);
+    }
+
+    return normalizedIngredients;
   }
 
   // Create a new recipe (optionally as a translation of another recipe)
@@ -89,48 +262,17 @@ export class RecipesController {
     @Body() createRecipeDto: CreateRecipeDto & { translationOf?: string }
   ) {
     const author = user.userId;
-    const normalizedIngredients: NormalizedIngredientEntry[] = [];
-    for (const ing of createRecipeDto.ingredients) {
-      // Determine or create ingredientId/variantId
-      let ingredientId = ing.ingredientId;
-      let variantId: string | undefined;
-      if (!ingredientId && ing.name) {
-        const result = await this.ingredientNormalizer.findOrCreateVariant(
-          ing.name
-        );
-        ingredientId = result.ingredientId;
-        variantId = result.variantId;
-      }
-      if (!ingredientId) {
-        throw new BadRequestException(
-          'Ingredient must have a name or ingredientId'
-        );
-      }
-      // Determine Unit ObjectId: prefer unitId, fallback to lookup by code
-      let unitObjectId: Types.ObjectId | undefined;
-      if (ing.unitId) {
-        unitObjectId = new Types.ObjectId(ing.unitId);
-      } else if (ing.unit) {
-        const unitDoc = await this.unitModel.findOne({ code: ing.unit }).exec();
-        if (unitDoc) unitObjectId = unitDoc._id as Types.ObjectId;
-      }
-      // Only include unit field if we have a valid ObjectId
-
-      const ingredientEntry: NormalizedIngredientEntry = {
-        ingredientId,
-        variantId,
-        quantity: ing.quantity,
-      };
-      if (unitObjectId) {
-        ingredientEntry.unit = unitObjectId;
-      }
-      normalizedIngredients.push(ingredientEntry);
-    }
+    const normalizedIngredients = await this.normalizeIngredients(
+      createRecipeDto.ingredients,
+      createRecipeDto.language ?? 'en'
+    );
+    const originFields = this.resolveOriginFields(createRecipeDto);
     // Build the data object for saving (do not overwrite the DTO)
     const recipeData = {
       ...createRecipeDto,
       author,
       ingredients: normalizedIngredients,
+      ...originFields,
     };
     // Save and return populated lean recipe
     const saved = await this.recipeModel.create(recipeData);
@@ -231,15 +373,43 @@ export class RecipesController {
       throw new UnauthorizedException('Not your recipe');
     }
 
-    // Apply update and return populated lean recipe
-    const updated = await this.recipeModel
-      .findByIdAndUpdate(id, updateRecipeDto, { new: true })
-      .exec();
-    if (!updated) {
-      throw new NotFoundException('Recipe not found');
-    }
+    const nextOriginFields = this.resolveOriginFields({
+      sourceType: updateRecipeDto.sourceType ?? recipe.sourceType,
+      sourceName:
+        updateRecipeDto.sourceName !== undefined
+          ? updateRecipeDto.sourceName
+          : recipe.sourceName,
+      sourceUrl:
+        updateRecipeDto.sourceUrl !== undefined
+          ? updateRecipeDto.sourceUrl
+          : recipe.sourceUrl,
+      attributionText:
+        updateRecipeDto.attributionText !== undefined
+          ? updateRecipeDto.attributionText
+          : recipe.attributionText,
+      rightsStatus: updateRecipeDto.rightsStatus ?? recipe.rightsStatus,
+      publicationEligibility:
+        updateRecipeDto.publicationEligibility ?? recipe.publicationEligibility,
+    });
+
+    const { ingredients: _rawIngredients, ...restUpdateRecipeDto } =
+      updateRecipeDto;
+
+    const normalizedIngredients = updateRecipeDto.ingredients
+      ? await this.normalizeIngredients(
+          updateRecipeDto.ingredients,
+          recipe.language
+        )
+      : undefined;
+
+    recipe.set({
+      ...restUpdateRecipeDto,
+      ...(normalizedIngredients ? { ingredients: normalizedIngredients } : {}),
+      ...nextOriginFields,
+    });
+    await recipe.save();
     const result = await this.withPopulateAndLean(
-      this.recipeModel.findById(updated._id)
+      this.recipeModel.findById(recipe._id)
     ).exec();
     if (!result) {
       throw new InternalServerErrorException();

@@ -6,7 +6,9 @@ import {
   IsString,
   Min,
   Max,
+  IsEnum,
 } from 'class-validator';
+import { RecipeSourceType } from '../recipe.enums';
 
 function toStringArray(value: unknown): string[] {
   if (Array.isArray(value)) {
@@ -60,6 +62,10 @@ export class FilterRecipesQueryDto {
   @IsOptional()
   @IsString()
   country?: string;
+
+  @IsOptional()
+  @IsEnum(RecipeSourceType)
+  sourceType?: RecipeSourceType;
 
   @IsOptional()
   @Type(() => Number)

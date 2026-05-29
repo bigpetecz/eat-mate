@@ -1,5 +1,5 @@
 'use client';
-import { useEffect } from 'react';
+import { useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -16,6 +16,13 @@ import {
 import { Input } from '@/components/ui/input';
 import { IngredientAutocomplete } from '@/components/ui/ingredient-autocomplete';
 import { UnitAutocomplete } from '@/components/ui/unit-autocomplete';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 
 import { Textarea } from '@/components/ui/textarea';
 import { Combobox } from '@/components/ui/combobox';
@@ -36,6 +43,7 @@ import { PlusIcon, Upload, X } from 'lucide-react';
 import { StepsEditor } from '@/components/steps-editor/steps-editor';
 import { countries } from './countries';
 import { Separator } from '../ui/separator';
+import type { RecipeRightsStatus, RecipeSourceType } from '@/types/recipe';
 
 export interface RecipeFormProps {
   defaultValues: RecipeFormValues;
@@ -48,7 +56,7 @@ export interface RecipeFormProps {
 
 export type Ingredient = {
   name: string;
-  quantity: string;
+  quantity: string | number;
   unit?: string;
   ingredientId?: string;
   unitId?: string; // store selected unit's id
@@ -58,6 +66,11 @@ export type RecipeFormValues = {
   title: string;
   description: string;
   country: string;
+  sourceType: RecipeSourceType;
+  sourceName: string;
+  sourceUrl: string;
+  attributionText: string;
+  rightsStatus: RecipeRightsStatus;
   prepTime: number;
   cookTime: number;
   servings: number;
@@ -71,43 +84,145 @@ function getFlagEmoji(countryCode: string) {
     .replace(/./g, (char) => String.fromCodePoint(127397 + char.charCodeAt(0)));
 }
 
-const formSchema = z.object({
-  title: z.string().min(3, { message: 'Title must be at least 3 characters.' }),
-  description: z
-    .string()
-    .min(10, { message: 'Description must be at least 10 characters.' }),
-  country: z.string().min(1, { message: 'Country is required.' }),
-  prepTime: z.coerce
-    .number()
-    .min(0, { message: 'Prep time must be 0 or more.' })
-    .max(1440, { message: 'Prep time must be less than 24 hours.' }),
-  cookTime: z.coerce
-    .number()
-    .min(0, { message: 'Cook time must be 0 or more.' })
-    .max(1440, { message: 'Cook time must be less than 24 hours.' }),
-  servings: z.coerce
-    .number()
-    .min(1, { message: 'Servings must be at least 1.' })
-    .max(100, { message: 'Servings must be less than 100.' }),
-  ingredients: z
-    .array(
-      z.object({
-        name: z.string().min(1, { message: 'Ingredient name required.' }),
-        quantity: z.string().min(1, { message: 'Quantity required.' }),
-        ingredientId: z.string().optional(),
-        unit: z.string().optional(),
-        unitId: z.string().optional(), // unit id if selected
-      })
-    )
-    .min(1, { message: 'At least one ingredient is required.' }),
-  instructions: z
-    .array(
-      z
+const createFormSchema = (dict: Record<string, string>) =>
+  z
+    .object({
+      title: z.string().min(3, {
+        message:
+          dict.validationTitleMin || 'Title must be at least 3 characters.',
+      }),
+      description: z.string().min(10, {
+        message:
+          dict.validationDescriptionMin ||
+          'Description must be at least 10 characters.',
+      }),
+      country: z.string().min(1, {
+        message: dict.validationCountryRequired || 'Country is required.',
+      }),
+      sourceType: z.enum([
+        'user_original',
+        'inspired_by_chef',
+        'adapted_from_external',
+        'licensed_partner',
+      ]),
+      sourceName: z.string(),
+      sourceUrl: z
         .string()
-        .min(5, { message: 'Instruction must be at least 5 characters.' })
-    )
-    .min(1, { message: 'At least one instruction is required.' }),
-});
+        .refine(
+          (value) =>
+            value.trim() === '' || z.string().url().safeParse(value).success,
+          { message: dict.validationSourceUrl || 'Enter a valid URL.' }
+        ),
+      attributionText: z.string(),
+      rightsStatus: z.enum(['unknown', 'attributed', 'licensed']),
+      prepTime: z.coerce
+        .number()
+        .min(0, {
+          message: dict.validationPrepTimeMin || 'Prep time must be 0 or more.',
+        })
+        .max(1440, {
+          message:
+            dict.validationPrepTimeMax ||
+            'Prep time must be less than 24 hours.',
+        }),
+      cookTime: z.coerce
+        .number()
+        .min(0, {
+          message: dict.validationCookTimeMin || 'Cook time must be 0 or more.',
+        })
+        .max(1440, {
+          message:
+            dict.validationCookTimeMax ||
+            'Cook time must be less than 24 hours.',
+        }),
+      servings: z.coerce
+        .number()
+        .min(1, {
+          message: dict.validationServingsMin || 'Servings must be at least 1.',
+        })
+        .max(100, {
+          message:
+            dict.validationServingsMax || 'Servings must be less than 100.',
+        }),
+      ingredients: z
+        .array(
+          z.object({
+            name: z.string().min(1, {
+              message:
+                dict.validationIngredientNameRequired ||
+                'Ingredient name required.',
+            }),
+            quantity: z
+              .union([z.string(), z.number()])
+              .transform((value) => String(value).trim())
+              .pipe(
+                z.string().min(1, {
+                  message:
+                    dict.validationQuantityRequired || 'Quantity required.',
+                })
+              ),
+            ingredientId: z.string().optional(),
+            unit: z.string().optional(),
+            unitId: z.string().optional(),
+          })
+        )
+        .min(1, {
+          message:
+            dict.validationIngredientsMin ||
+            'At least one ingredient is required.',
+        }),
+      instructions: z
+        .array(
+          z.string().min(5, {
+            message:
+              dict.validationInstructionMin ||
+              'Instruction must be at least 5 characters.',
+          })
+        )
+        .min(1, {
+          message:
+            dict.validationInstructionsMin ||
+            'At least one instruction is required.',
+        }),
+    })
+    .superRefine((values, ctx) => {
+      const hasSourceName = values.sourceName.trim().length > 0;
+      const hasAttributionText = values.attributionText.trim().length > 0;
+
+      if (
+        values.sourceType !== 'user_original' &&
+        !hasSourceName &&
+        !hasAttributionText
+      ) {
+        const message =
+          dict.validationSourceAttributionRequired ||
+          'For non-original recipes, add source name or attribution text.';
+
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message,
+          path: ['sourceName'],
+        });
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message,
+          path: ['attributionText'],
+        });
+      }
+
+      if (
+        values.sourceType === 'licensed_partner' &&
+        values.rightsStatus !== 'licensed'
+      ) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message:
+            dict.validationLicensedRightsStatus ||
+            'Licensed partner recipes must use rights status: Licensed.',
+          path: ['rightsStatus'],
+        });
+      }
+    });
 
 const RecipeForm: FC<RecipeFormProps> = ({
   defaultValues,
@@ -124,10 +239,12 @@ const RecipeForm: FC<RecipeFormProps> = ({
 
   // Refs for focusing ingredient inputs
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
+  const formSchema = useMemo(() => createFormSchema(dict), [dict]);
   const form = useForm<RecipeFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
+  const sourceType = form.watch('sourceType');
   const [files, setFiles] = useState<File[]>(defaultFiles || []);
   const [removingIdx, setRemovingIdx] = useState<number | null>(null);
   const onFileReject = (file: File, message: string) => {
@@ -137,10 +254,74 @@ const RecipeForm: FC<RecipeFormProps> = ({
 
   const onFormSubmit = useCallback(
     async (data: RecipeFormValues) => {
-      onSubmit(data, files);
+      const normalizedData: RecipeFormValues = {
+        ...data,
+        sourceName: data.sourceName.trim(),
+        sourceUrl: data.sourceUrl.trim(),
+        attributionText: data.attributionText.trim(),
+        rightsStatus:
+          data.sourceType === 'licensed_partner'
+            ? 'licensed'
+            : data.rightsStatus,
+      };
+
+      if (normalizedData.sourceType === 'user_original') {
+        normalizedData.sourceName = '';
+        normalizedData.sourceUrl = '';
+        normalizedData.attributionText = '';
+        normalizedData.rightsStatus = 'unknown';
+      }
+
+      onSubmit(normalizedData, files);
     },
     [files, onSubmit]
   );
+
+  useEffect(() => {
+    if (sourceType === 'licensed_partner') {
+      form.setValue('rightsStatus', 'licensed', {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+      return;
+    }
+
+    if (sourceType === 'user_original') {
+      form.clearErrors([
+        'sourceName',
+        'sourceUrl',
+        'attributionText',
+        'rightsStatus',
+      ]);
+      form.setValue('rightsStatus', 'unknown', {
+        shouldDirty: true,
+        shouldValidate: true,
+      });
+    }
+  }, [form, sourceType]);
+
+  const originHelperText =
+    sourceType === 'licensed_partner'
+      ? dict.licensedPartnerHelper
+      : sourceType === 'adapted_from_external'
+      ? dict.adaptedFromExternalHelper
+      : sourceType === 'inspired_by_chef'
+      ? dict.inspiredByChefHelper
+      : dict.userOriginalHelper;
+
+  const getQuantityUnitValue = (ingredient: Ingredient) => {
+    const quantity =
+      ingredient.quantity === null || ingredient.quantity === undefined
+        ? ''
+        : String(ingredient.quantity).trim();
+    const unit = ingredient.unit?.trim() ?? '';
+
+    if (quantity && unit) {
+      return `${quantity} ${unit}`;
+    }
+
+    return quantity || unit;
+  };
 
   return (
     <Form {...form}>
@@ -213,6 +394,147 @@ const RecipeForm: FC<RecipeFormProps> = ({
             </FormItem>
           )}
         />
+        <div className="rounded-xl border border-border/70 bg-muted/30 p-4 md:p-5">
+          <div className="mb-4">
+            <h2 className="text-base font-semibold">{dict.recipeOrigin}</h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {originHelperText}
+            </p>
+          </div>
+          <div className="grid gap-4 md:grid-cols-2">
+            <FormField
+              control={form.control}
+              name="sourceType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{dict.sourceType}</FormLabel>
+                  <FormControl>
+                    <Select value={field.value} onValueChange={field.onChange}>
+                      <SelectTrigger className="w-full">
+                        <SelectValue placeholder={dict.sourceType} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="user_original">
+                          {dict.sourceTypeUserOriginal}
+                        </SelectItem>
+                        <SelectItem value="inspired_by_chef">
+                          {dict.sourceTypeInspiredByChef}
+                        </SelectItem>
+                        <SelectItem value="adapted_from_external">
+                          {dict.sourceTypeAdaptedFromExternal}
+                        </SelectItem>
+                        <SelectItem value="licensed_partner">
+                          {dict.sourceTypeLicensedPartner}
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            {sourceType !== 'user_original' ? (
+              <FormField
+                control={form.control}
+                name="rightsStatus"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{dict.rightsStatus}</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                        disabled={sourceType === 'licensed_partner'}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={dict.rightsStatus} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="unknown">
+                            {dict.rightsStatusUnknown}
+                          </SelectItem>
+                          <SelectItem value="attributed">
+                            {dict.rightsStatusAttributed}
+                          </SelectItem>
+                          <SelectItem value="licensed">
+                            {dict.rightsStatusLicensed}
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            ) : null}
+          </div>
+          {sourceType !== 'user_original' ? (
+            <div className="mt-4 grid gap-4 md:grid-cols-2">
+              <FormField
+                control={form.control}
+                name="sourceName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{dict.sourceName}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={dict.sourceNamePlaceholder}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {dict.sourceNameDescription}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="sourceUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>{dict.sourceUrl}</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder={dict.sourceUrlPlaceholder}
+                        {...field}
+                        value={field.value ?? ''}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {dict.sourceUrlDescription}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <div className="md:col-span-2">
+                <FormField
+                  control={form.control}
+                  name="attributionText"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dict.attributionText}</FormLabel>
+                      <FormControl>
+                        <Textarea
+                          placeholder={dict.attributionTextPlaceholder}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {dict.attributionTextDescription}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+          ) : null}
+        </div>
         <div className="flex flex-col md:flex-row gap-4 w-full">
           <FormField
             control={form.control}
@@ -295,18 +617,16 @@ const RecipeForm: FC<RecipeFormProps> = ({
                         }}
                       />
                       <UnitAutocomplete
-                        value={
-                          ing.quantity && ing.unit
-                            ? `${ing.quantity} ${ing.unit}`
-                            : ing.unit || ''
-                        }
+                        value={getQuantityUnitValue(ing)}
                         onChange={(val, parsedValues) => {
                           const newArr = [...field.value];
 
                           if (parsedValues) {
                             // Update both quantity and unit if parsing is available
-                            if (parsedValues.quantity) {
-                              newArr[idx].quantity = parsedValues.quantity;
+                            if (parsedValues.quantity.trim() !== '') {
+                              newArr[idx].quantity = String(
+                                parsedValues.quantity
+                              );
                             }
                             newArr[idx].unit = parsedValues.unit || val;
                             // clear unitId when user freeforms

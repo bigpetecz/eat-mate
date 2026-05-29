@@ -6,6 +6,7 @@ import { plainToInstance } from 'class-transformer';
 import { Recipe } from '../schema/recipe.schema';
 import { RecipeDto } from '../dto/recipe.dto';
 import { FilterRecipesQueryDto } from '../dto/filter-recipes-query.dto';
+import { RecipePublicationEligibility } from '../recipe.enums';
 
 type RecipeFindQuery = ReturnType<Model<Recipe>['find']>;
 
@@ -18,7 +19,7 @@ export class RecipesQueryService {
   private withPopulateAndLean(query: RecipeFindQuery) {
     return query
       .select(
-        'author title description slug images cookTime prepTime servings instructions country ai ' +
+        'author title description slug images cookTime prepTime servings instructions country ai sourceType sourceName sourceUrl attributionText rightsStatus publicationEligibility ' +
           'ingredients.ingredientId ingredients.variantId ingredients.unit'
       )
       .populate('ingredients.ingredientId')
@@ -37,7 +38,12 @@ export class RecipesQueryService {
 
   async findAll(language: string): Promise<RecipeDto[]> {
     const results = await this.withPopulateAndLean(
-      this.recipeModel.find({ language }).select('+slug')
+      this.recipeModel
+        .find({
+          language,
+          publicationEligibility: { $ne: RecipePublicationEligibility.Blocked },
+        })
+        .select('+slug')
     ).exec();
 
     return plainToInstance(RecipeDto, results);
@@ -55,6 +61,7 @@ export class RecipesQueryService {
       specialAttributes,
       difficulty,
       country,
+      sourceType,
       prepTimeMin,
       prepTimeMax,
       cookTimeMin,
@@ -88,6 +95,10 @@ export class RecipesQueryService {
 
     if (country) {
       andConditions.push({ country });
+    }
+
+    if (sourceType) {
+      andConditions.push({ sourceType });
     }
 
     const dietsArr = this.parseArray(diets);
@@ -154,8 +165,23 @@ export class RecipesQueryService {
 
     const query =
       andConditions.length > 0
-        ? { $and: [{ language }, ...andConditions] }
-        : { language };
+        ? {
+            $and: [
+              {
+                language,
+                publicationEligibility: {
+                  $ne: RecipePublicationEligibility.Blocked,
+                },
+              },
+              ...andConditions,
+            ],
+          }
+        : {
+            language,
+            publicationEligibility: {
+              $ne: RecipePublicationEligibility.Blocked,
+            },
+          };
 
     const filtered = await this.withPopulateAndLean(
       this.recipeModel.find(query).select('+slug')
@@ -168,6 +194,13 @@ export class RecipesQueryService {
     const results = await this.recipeModel
       .aggregate([
         { $match: { language, slug } },
+        {
+          $match: {
+            publicationEligibility: {
+              $ne: RecipePublicationEligibility.Blocked,
+            },
+          },
+        },
         { $unwind: { path: '$ingredients', preserveNullAndEmptyArrays: true } },
         {
           $lookup: {
@@ -229,6 +262,12 @@ export class RecipesQueryService {
             instructions: { $first: '$instructions' },
             country: { $first: '$country' },
             language: { $first: '$language' },
+            sourceType: { $first: '$sourceType' },
+            sourceName: { $first: '$sourceName' },
+            sourceUrl: { $first: '$sourceUrl' },
+            attributionText: { $first: '$attributionText' },
+            rightsStatus: { $first: '$rightsStatus' },
+            publicationEligibility: { $first: '$publicationEligibility' },
             averageRating: { $first: '$averageRating' },
             ratingCount: { $first: '$ratingCount' },
             ai: { $first: '$ai' },
@@ -288,6 +327,12 @@ export class RecipesQueryService {
             servings: 1,
             instructions: 1,
             country: 1,
+            sourceType: 1,
+            sourceName: 1,
+            sourceUrl: 1,
+            attributionText: 1,
+            rightsStatus: 1,
+            publicationEligibility: 1,
             averageRating: 1,
             ratingCount: 1,
             ai: 1,

@@ -74,3 +74,22 @@ export enum SpecialAttribute {
   FiveIngredients = '5-ingredients',
   KidFriendly = 'kid-friendly',
 }
+
+export enum RecipeSourceType {
+  UserOriginal = 'user_original',
+  InspiredByChef = 'inspired_by_chef',
+  AdaptedFromExternal = 'adapted_from_external',
+  LicensedPartner = 'licensed_partner',
+}
+
+export enum RecipeRightsStatus {
+  Unknown = 'unknown',
+  Attributed = 'attributed',
+  Licensed = 'licensed',
+}
+
+export enum RecipePublicationEligibility {
+  PublicAllowed = 'public_allowed',
+  ReviewRequired = 'review_required',
+  Blocked = 'blocked',
+}

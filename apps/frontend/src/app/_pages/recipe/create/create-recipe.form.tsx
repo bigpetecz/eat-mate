@@ -2,7 +2,7 @@
 
 import { apiClient } from '@/app/api-client';
 import { User } from '@/app/auth/authStore';
-import RecipeForm from '@/components/recipe/recipe-form';
+import RecipeForm, { RecipeFormValues } from '@/components/recipe/recipe-form';
 import { getLocalizedRoute, Locale } from '@/i18n';
 import { useRouter } from 'next/navigation';
 import { FC } from 'react';
@@ -21,7 +21,14 @@ export const CreateRecipeForm: FC<CreateRecipeFormProps> = ({
 }) => {
   const router = useRouter();
 
-  const onSubmit = async (data: any, newFiles: File[]) => {
+  const createPayload = (data: RecipeFormValues) => ({
+    ...data,
+    sourceName: data.sourceName.trim() || undefined,
+    sourceUrl: data.sourceUrl.trim() || undefined,
+    attributionText: data.attributionText.trim() || undefined,
+  });
+
+  const onSubmit = async (data: RecipeFormValues, newFiles: File[]) => {
     try {
       if (!user) {
         toast.error('User not authenticated');
@@ -29,7 +36,7 @@ export const CreateRecipeForm: FC<CreateRecipeFormProps> = ({
       }
       // 1. Create recipe (without images)
       const res = await apiClient.post('/recipes', {
-        ...data,
+        ...createPayload(data),
         author: user._id,
       });
       const recipeId = res.data._id || res.data.id;
@@ -57,6 +64,11 @@ export const CreateRecipeForm: FC<CreateRecipeFormProps> = ({
         title: '',
         description: '',
         country: '',
+        sourceType: 'user_original',
+        sourceName: '',
+        sourceUrl: '',
+        attributionText: '',
+        rightsStatus: 'unknown',
         prepTime: 0,
         cookTime: 0,
         servings: 0,

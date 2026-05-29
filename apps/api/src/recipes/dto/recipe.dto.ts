@@ -5,13 +5,19 @@ import {
   IsNumber,
   IsArray,
   ValidateNested,
+  IsUrl,
 } from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 
 import { IsMongoId, IsEnum } from 'class-validator';
 import { PartialType, OmitType } from '@nestjs/mapped-types';
-import { ApiProperty } from '@nestjs/swagger';
-import { WinePairing } from '../recipe.enums';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
+import {
+  WinePairing,
+  RecipeSourceType,
+  RecipeRightsStatus,
+  RecipePublicationEligibility,
+} from '../recipe.enums';
 
 class IngredientDto {
   @IsMongoId()
@@ -209,6 +215,36 @@ export class CreateRecipeDto {
   @IsString()
   @IsOptional()
   country?: string;
+
+  @ApiPropertyOptional({ enum: RecipeSourceType })
+  @IsOptional()
+  @IsEnum(RecipeSourceType)
+  sourceType?: RecipeSourceType;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  sourceName?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsUrl()
+  sourceUrl?: string;
+
+  @ApiPropertyOptional()
+  @IsOptional()
+  @IsString()
+  attributionText?: string;
+
+  @ApiPropertyOptional({ enum: RecipeRightsStatus })
+  @IsOptional()
+  @IsEnum(RecipeRightsStatus)
+  rightsStatus?: RecipeRightsStatus;
+
+  @ApiPropertyOptional({ enum: RecipePublicationEligibility })
+  @IsOptional()
+  @IsEnum(RecipePublicationEligibility)
+  publicationEligibility?: RecipePublicationEligibility;
 
   @IsOptional()
   @ValidateNested()

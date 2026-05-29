@@ -2,7 +2,7 @@
 import { FC } from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, useSearchParams } from 'next/navigation';
-import type { Recipe } from '@/types/recipe';
+import type { Recipe, RecipeSourceType } from '@/types/recipe';
 import { apiClient } from '@/app/api-client';
 import { toApiClientError } from '@/lib/api-error';
 import { FiltersCard } from './FiltersCard';
@@ -16,6 +16,7 @@ interface DiscoverInnerProps {
 interface DiscoverFilters {
   search: string;
   mealType: string;
+  sourceType: '' | RecipeSourceType;
   diets: string[];
   techniques: string[];
   difficulty: string;
@@ -49,6 +50,8 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
     return {
       search: searchParams.get('search') || '',
       mealType: searchParams.get('mealType') || '',
+      sourceType:
+        (searchParams.get('sourceType') as '' | RecipeSourceType | null) || '',
       diets: getArray('diets'),
       techniques: getArray('techniques'),
       difficulty: searchParams.get('difficulty') || '',
@@ -70,6 +73,7 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
     return new URLSearchParams({
       ...(filters.search && { search: filters.search }),
       ...(filters.mealType && { mealType: filters.mealType }),
+      ...(filters.sourceType && { sourceType: filters.sourceType }),
       ...(filters.diets.length && { diets: filters.diets.join(',') }),
       ...(filters.techniques.length && {
         techniques: filters.techniques.join(','),
@@ -134,6 +138,7 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
     const params = new URLSearchParams();
     if (filters.search) params.set('search', filters.search);
     if (filters.mealType) params.set('mealType', filters.mealType);
+    if (filters.sourceType) params.set('sourceType', filters.sourceType);
     if (filters.diets && filters.diets.length)
       params.set('diets', filters.diets.join(','));
     if (filters.techniques && filters.techniques.length)
@@ -187,7 +192,10 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
     <div className="bg-muted min-h-[calc(100vh-8rem)] w-full">
       <FiltersCard
         defaultValues={defaultValues}
-        onReset={() => fetchRecipes(defaultValues)}
+        onReset={(values) => {
+          updateUrlWithFilters(values);
+          fetchRecipes(values);
+        }}
         onSearchSubmit={handleSearchSubmit}
         onFiltersSubmit={handleFiltersSubmit}
         dict={dictionary}

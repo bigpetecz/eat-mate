@@ -3,6 +3,7 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
+    "start": "npx nx run @eat-mate/frontend:dev & npx nx run @eat-mate/api:serve & wait",
     "lint:frontend": "nx lint frontend",
     "typecheck:frontend": "nx typecheck frontend",
     "build:frontend": "NX_TUI=false npx nx run @eat-mate/frontend:build",
@@ -10,7 +11,8 @@
     "ci:frontend": "npm run lint:frontend && npm run typecheck:frontend && npm run test:frontend",
     "lint:api": "NX_TUI=false npx nx run @eat-mate/api:lint",
     "typecheck:api": "NX_TUI=false npx nx run @eat-mate/api:typecheck",
-    "ci:api": "npm run lint:api && npm run typecheck:api"
+    "test:api": "NX_TUI=false npx nx test api",
+    "ci:api": "npm run lint:api && npm run typecheck:api && npm run test:api"
   },
   "private": true,
   "dependencies": {

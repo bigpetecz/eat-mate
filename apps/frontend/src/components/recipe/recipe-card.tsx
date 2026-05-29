@@ -11,37 +11,74 @@ import {
 } from '@/lib/recipe-labels';
 import { useParams } from 'next/navigation';
 import { getLocalizedRoute, Locale } from '@/i18n';
+import { cn } from '@/lib/utils';
+import {
+  getRecipeOriginSummary,
+  getRecipeOriginTheme,
+  hasRecipeOrigin,
+} from '@/lib/recipe-origin';
+import { RecipeOriginBadge } from './recipe-origin-badge';
 
 export interface RecipeCardProps {
   recipe: Recipe;
 }
 
 export function RecipeCard({ recipe }: RecipeCardProps) {
-  const { language = 'en' } = useParams();
+  const params = useParams();
+  const language =
+    typeof params?.language === 'string' ? params.language : 'en';
+  const originTheme = getRecipeOriginTheme(recipe.sourceType);
+  const originSummary = getRecipeOriginSummary(recipe, language);
+  const showsOrigin = hasRecipeOrigin(recipe);
 
   return (
     <Link
       href={getLocalizedRoute('recipeDetail', language as Locale, recipe.slug)}
       className="contents"
     >
-      <Card className="pt-0 pb-2 px-0">
+      <Card
+        className={cn(
+          'relative overflow-hidden pt-0 pb-2 px-0 transition-colors',
+          originTheme?.cardClassName
+        )}
+      >
+        {showsOrigin && originTheme ? (
+          <div
+            aria-hidden="true"
+            className={cn(
+              'absolute inset-y-0 left-0 z-10 w-1',
+              originTheme.accentClassName
+            )}
+          />
+        ) : null}
         <CardContent className="p-0">
-          {recipe.images?.[0] ? (
-            <Image
-              src={recipe.images[0]}
-              alt={recipe.title}
-              width={600}
-              height={256}
-              className="w-full h-64 object-cover rounded-t-lg"
-              priority={true}
+          <div className="relative">
+            <RecipeOriginBadge
+              sourceType={recipe.sourceType}
+              language={language}
             />
-          ) : (
-            <div className="rounded-lg w-full md:w-80 h-64 object-cover mb-4 md:mb-0 bg-background flex items-center justify-center text-muted-foreground">
-              No image
-            </div>
-          )}
+            {recipe.images?.[0] ? (
+              <Image
+                src={recipe.images[0]}
+                alt={recipe.title}
+                width={600}
+                height={256}
+                className="h-64 w-full object-cover rounded-t-lg"
+                priority={true}
+              />
+            ) : (
+              <div className="flex h-64 w-full items-center justify-center rounded-lg bg-background text-muted-foreground md:w-80">
+                No image
+              </div>
+            )}
+          </div>
           <div className="p-4 pb-0">
             <h3 className="text-xl font-semibold">{recipe.title}</h3>
+            {originSummary ? (
+              <p className="mt-1 line-clamp-1 text-xs font-medium uppercase tracking-[0.16em] text-muted-foreground">
+                {originSummary}
+              </p>
+            ) : null}
             <p
               className="text-muted-foreground mt-2 line-clamp-2"
               style={{
@@ -103,7 +140,7 @@ export function RecipeCard({ recipe }: RecipeCardProps) {
                 );
               })}
             </div>
-            <div className="flex items-center justify-between mt-4 text-sm text-muted-foreground">
+            <div className="mt-4 flex items-center justify-between text-sm text-muted-foreground">
               <span className="flex items-center gap-1">
                 <Clock className="w-4 h-4" />
                 {recipe.prepTime} min + {recipe.cookTime} min
