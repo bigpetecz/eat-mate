@@ -14,8 +14,8 @@ jobs:
           KEEP_ALIVE_API_URL: ${{ secrets.KEEP_ALIVE_API_URL }}
         run: |
           if [ -z "$KEEP_ALIVE_API_URL" ]; then
-            echo "KEEP_ALIVE_API_URL secret is not set"
-            exit 1
+            echo "KEEP_ALIVE_API_URL secret is not set, skipping keep-alive ping"
+            exit 0
           fi
 
           base_url="${KEEP_ALIVE_API_URL%/}"
@@ -27,11 +27,11 @@ jobs:
           # Some deployments return 404 on one path but are still healthy.
           for url in "$first_try" "$health_try" "$api_health_try"; do
             echo "Pinging $url"
-            if curl --fail --silent --show-error --max-time 20 "$url" >/dev/null; then
+            if curl --fail --silent --show-error --connect-timeout 5 --max-time 20 "$url" >/dev/null; then
               echo "Keep-alive ping succeeded: $url"
               exit 0
             fi
           done
 
-          echo "Keep-alive ping failed for all URL variants"
-          exit 1
+          echo "Keep-alive ping failed for all URL variants (non-blocking)"
+          exit 0
