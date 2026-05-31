@@ -13,7 +13,7 @@ interface HeaderProps {
 
 export async function Header({ language, commonDictionary }: HeaderProps) {
   return (
-    <header className="site-header fixed top-0 flex justify-between items-center px-4 md:px-6 h-16 border-b z-30 bg-background/80 backdrop-blur shadow-sm w-full">
+    <header className="site-header fixed inset-x-0 top-0 flex justify-between items-center px-4 md:px-6 h-16 border-b z-30 bg-background/80 backdrop-blur shadow-sm">
       {/* Logo: show smaller or alternate logo on mobile */}
       <Link
         href={getLocalizedRoute('homepage', language)}

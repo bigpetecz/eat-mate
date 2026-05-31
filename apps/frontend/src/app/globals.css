@@ -155,9 +155,10 @@
 
 html {
   overflow-y: scroll;
+  overflow-x: clip;
   scrollbar-gutter: stable;
 }
 
-body[data-scroll-locked] {
-  margin-right: 0 !important;
+body {
+  overflow-x: clip;
 }
