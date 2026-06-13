@@ -17,6 +17,8 @@
   },
   "[json]": {
     "editor.defaultFormatter": "esbenp.prettier-vscode"
-  }
+  },
+  "mdb.mcp.server": "autoStartEnabled",
+  "mdb.mcp.readOnly": true
 }
 // If you see type errors, ignore them. VS Code will still apply these settings correctly for format and lint on save.
