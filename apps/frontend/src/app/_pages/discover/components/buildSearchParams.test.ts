@@ -1,45 +1,8 @@
-/**
- * Unit tests for the URL search-param builder logic used in DiscoverInner.
- * The builder is a pure function so we inline an equivalent here to keep
- * the test file free of Next.js client-only dependencies.
- */
-
-interface DiscoverFilters {
-  search: string;
-  mealType: string;
-  sourceType: string;
-  diets: string[];
-  techniques: string[];
-  difficulty: string;
-  country: string;
-  cookTime: [number, number];
-  calories: [number, number];
-  estimatedCost: [number, number];
-  specialAttributes: string[];
-}
-
-function buildSearchParams(filters: DiscoverFilters): URLSearchParams {
-  return new URLSearchParams({
-    ...(filters.search && { search: filters.search }),
-    ...(filters.mealType && { mealType: filters.mealType }),
-    ...(filters.sourceType && { sourceType: filters.sourceType }),
-    ...(filters.diets.length && { diets: filters.diets.join(',') }),
-    ...(filters.techniques.length && {
-      techniques: filters.techniques.join(','),
-    }),
-    ...(filters.difficulty && { difficulty: filters.difficulty }),
-    ...(filters.country && { country: filters.country }),
-    cookTimeMin: filters.cookTime[0].toString(),
-    cookTimeMax: filters.cookTime[1].toString(),
-    caloriesMin: filters.calories[0].toString(),
-    caloriesMax: filters.calories[1].toString(),
-    estimatedCostMin: filters.estimatedCost[0].toString(),
-    estimatedCostMax: filters.estimatedCost[1].toString(),
-    ...(filters.specialAttributes.length && {
-      specialAttributes: filters.specialAttributes.join(','),
-    }),
-  });
-}
+import {
+  buildDiscoverSearchParams,
+  parseDiscoverFiltersFromSearchParams,
+  type DiscoverFilters,
+} from './discoverFilters';
 
 const defaults: DiscoverFilters = {
   search: '',
@@ -57,7 +20,7 @@ const defaults: DiscoverFilters = {
 
 describe('buildSearchParams', () => {
   it('always includes range params even on defaults', () => {
-    const params = buildSearchParams(defaults);
+    const params = buildDiscoverSearchParams(defaults);
     expect(params.get('cookTimeMin')).toBe('0');
     expect(params.get('cookTimeMax')).toBe('240');
     expect(params.get('caloriesMin')).toBe('0');
@@ -67,7 +30,7 @@ describe('buildSearchParams', () => {
   });
 
   it('omits empty string / empty array optional params', () => {
-    const params = buildSearchParams(defaults);
+    const params = buildDiscoverSearchParams(defaults);
     expect(params.has('search')).toBe(false);
     expect(params.has('mealType')).toBe(false);
     expect(params.has('sourceType')).toBe(false);
@@ -79,7 +42,7 @@ describe('buildSearchParams', () => {
   });
 
   it('joins multi-value arrays with commas', () => {
-    const params = buildSearchParams({
+    const params = buildDiscoverSearchParams({
       ...defaults,
       diets: ['vegan', 'glutenFree'],
       techniques: ['grilling'],
@@ -91,7 +54,7 @@ describe('buildSearchParams', () => {
   });
 
   it('includes search and mealType when provided', () => {
-    const params = buildSearchParams({
+    const params = buildDiscoverSearchParams({
       ...defaults,
       search: 'pizza',
       mealType: 'dinner',
@@ -103,7 +66,7 @@ describe('buildSearchParams', () => {
   });
 
   it('respects narrowed cookTime ranges', () => {
-    const params = buildSearchParams({
+    const params = buildDiscoverSearchParams({
       ...defaults,
       cookTime: [15, 45],
       calories: [300, 800],
@@ -115,5 +78,13 @@ describe('buildSearchParams', () => {
     expect(params.get('caloriesMax')).toBe('800');
     expect(params.get('estimatedCostMin')).toBe('5');
     expect(params.get('estimatedCostMax')).toBe('20');
+  });
+
+  it('hydrates a single cookTime query value as a range', () => {
+    const values = parseDiscoverFiltersFromSearchParams(
+      new URLSearchParams('cookTime=30'),
+    );
+
+    expect(values.cookTime).toEqual([30, 30]);
   });
 });

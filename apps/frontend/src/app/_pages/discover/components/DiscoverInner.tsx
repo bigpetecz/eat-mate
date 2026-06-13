@@ -2,29 +2,20 @@
 import { FC } from 'react';
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useParams, usePathname, useSearchParams } from 'next/navigation';
-import type { Recipe, RecipeSourceType } from '@/types/recipe';
+import type { Recipe } from '@/types/recipe';
 import { apiClient } from '@/app/api-client';
 import { toApiClientError } from '@/lib/api-error';
 import { FiltersCard } from './FiltersCard';
 import { Headline } from './Headline';
 import { RecipeGrid } from './RecipeGrid';
+import {
+  buildDiscoverSearchParams,
+  parseDiscoverFiltersFromSearchParams,
+  type DiscoverFilters,
+} from './discoverFilters';
 
 interface DiscoverInnerProps {
   dictionary: Record<string, string>;
-}
-
-interface DiscoverFilters {
-  search: string;
-  mealType: string;
-  sourceType: '' | RecipeSourceType;
-  diets: string[];
-  techniques: string[];
-  difficulty: string;
-  country: string;
-  cookTime: [number, number];
-  calories: [number, number];
-  estimatedCost: [number, number];
-  specialAttributes: string[];
 }
 
 export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
@@ -32,38 +23,10 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const getDefaultValuesFromParams = (): DiscoverFilters => {
-    const getArray = (key: string) => {
-      const val = searchParams.get(key);
-      if (!val) return [];
-      return val.split(',').filter(Boolean);
-    };
-    const getRange = (
-      key: string,
-      defMin: number,
-      defMax: number,
-    ): [number, number] => {
-      const min = Number(searchParams.get(key + 'Min') ?? defMin);
-      const max = Number(searchParams.get(key + 'Max') ?? defMax);
-
-      return [min, max] as [number, number];
-    };
-    return {
-      search: searchParams.get('search') || '',
-      mealType: searchParams.get('mealType') || '',
-      sourceType:
-        (searchParams.get('sourceType') as '' | RecipeSourceType | null) || '',
-      diets: getArray('diets'),
-      techniques: getArray('techniques'),
-      difficulty: searchParams.get('difficulty') || '',
-      country: searchParams.get('country') || '',
-      cookTime: getRange('cookTime', 0, 240),
-      calories: getRange('calories', 0, 2000),
-      estimatedCost: getRange('estimatedCost', 0, 30),
-      specialAttributes: getArray('specialAttributes'),
-    };
-  };
-  const defaultValues = useMemo(getDefaultValuesFromParams, [searchParams]);
+  const defaultValues = useMemo(
+    () => parseDiscoverFiltersFromSearchParams(searchParams),
+    [searchParams],
+  );
   const returnTo = useMemo(() => {
     const currentQuery = searchParams.toString();
 
@@ -75,35 +38,12 @@ export const DiscoverInner: FC<DiscoverInnerProps> = ({ dictionary }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const buildSearchParams = (filters: DiscoverFilters) => {
-    return new URLSearchParams({
-      ...(filters.search && { search: filters.search }),
-      ...(filters.mealType && { mealType: filters.mealType }),
-      ...(filters.sourceType && { sourceType: filters.sourceType }),
-      ...(filters.diets.length && { diets: filters.diets.join(',') }),
-      ...(filters.techniques.length && {
-        techniques: filters.techniques.join(','),
-      }),
-      ...(filters.difficulty && { difficulty: filters.difficulty }),
-      ...(filters.country && { country: filters.country }),
-      cookTimeMin: filters.cookTime[0].toString(),
-      cookTimeMax: filters.cookTime[1].toString(),
-      caloriesMin: filters.calories[0].toString(),
-      caloriesMax: filters.calories[1].toString(),
-      estimatedCostMin: filters.estimatedCost[0].toString(),
-      estimatedCostMax: filters.estimatedCost[1].toString(),
-      ...(filters.specialAttributes.length && {
-        specialAttributes: filters.specialAttributes.join(','),
-      }),
-    });
-  };
-
   const fetchRecipes = useCallback(
     async (filters: DiscoverFilters) => {
       setLoading(true);
       setError(null);
       try {
-        const params = buildSearchParams(filters);
+        const params = buildDiscoverSearchParams(filters);
         const res = await apiClient.get<Recipe[]>(
           `/recipes/${language}/filter?${params.toString()}`,
         );
