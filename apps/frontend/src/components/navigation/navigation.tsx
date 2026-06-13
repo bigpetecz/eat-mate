@@ -9,8 +9,8 @@ import {
   NavigationMenu,
   NavigationMenuItem,
   NavigationMenuList,
-  navigationMenuTriggerStyle,
 } from '@/components/ui/navigation-menu';
+import { cn } from '@/lib/utils';
 import { getLocalizedRoute, Locale } from '@/i18n';
 
 // const components: { title: string; href: string; description: string }[] = [
@@ -75,6 +75,10 @@ interface NavigationProps {
   commonDictionary: Record<string, string>;
 }
 
+const mainNavigationLinkClassName = cn(
+  'group relative inline-flex h-9 w-max items-center justify-center rounded-full border border-transparent bg-transparent px-4 py-2 text-sm font-medium text-foreground transition-[color,background-color,border-color,box-shadow] duration-200 hover:border-orange-300/80 hover:bg-orange-100 hover:text-orange-950 hover:shadow-sm focus:border-orange-300/80 focus:bg-orange-100 focus:text-orange-950 focus:shadow-sm disabled:pointer-events-none disabled:opacity-50 data-[state=open]:border-orange-300/80 data-[state=open]:bg-orange-100 data-[state=open]:text-orange-950 data-[state=open]:shadow-sm dark:hover:border-orange-700/70 dark:hover:bg-orange-900/55 dark:hover:text-orange-50 dark:hover:shadow-sm dark:focus:border-orange-700/70 dark:focus:bg-orange-900/55 dark:focus:text-orange-50 dark:focus:shadow-sm dark:data-[state=open]:border-orange-700/70 dark:data-[state=open]:bg-orange-900/55 dark:data-[state=open]:text-orange-50 dark:data-[state=open]:shadow-sm focus-visible:ring-ring/50 outline-none focus-visible:ring-[3px] focus-visible:outline-1',
+);
+
 export function Navigation({ commonDictionary }: NavigationProps) {
   const params = useParams();
   const language = (
@@ -83,15 +87,23 @@ export function Navigation({ commonDictionary }: NavigationProps) {
   return (
     <NavigationMenu viewport={false}>
       <NavigationMenuList>
-        <NavigationMenuItem asChild className={navigationMenuTriggerStyle()}>
-          <Link href={getLocalizedRoute('recipeCreate', language)}>
-            <PlusIcon />
-            {commonDictionary.addRecipe}
+        <NavigationMenuItem asChild>
+          <Link
+            href={getLocalizedRoute('recipeCreate', language)}
+            className={mainNavigationLinkClassName}
+          >
+            <span className="inline-flex items-center gap-2">
+              <PlusIcon className="size-4" />
+              {commonDictionary.addRecipe}
+            </span>
           </Link>
         </NavigationMenuItem>
-        <NavigationMenuItem asChild className={navigationMenuTriggerStyle()}>
-          <Link href={getLocalizedRoute('discover', language, {})}>
-            {commonDictionary.discoverRecipes}
+        <NavigationMenuItem asChild>
+          <Link
+            href={getLocalizedRoute('discover', language, {})}
+            className={mainNavigationLinkClassName}
+          >
+            <span>{commonDictionary.discoverRecipes}</span>
           </Link>
         </NavigationMenuItem>
       </NavigationMenuList>

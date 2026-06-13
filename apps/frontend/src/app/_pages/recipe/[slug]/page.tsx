@@ -269,6 +269,42 @@ export default async function RecipePage({
             />
           </div>
         </div>
+      </div>
+      {/* Full-width white section for ingredients and instructions */}
+      <div className="bg-background w-full py-10">
+        <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="px-8">
+            <ServingsIngredients
+              servings={recipe.servings}
+              ingredients={recipe.ingredients}
+              labels={{
+                ingredients: dict.ingredients,
+                servings: dict.servings,
+              }}
+            />
+          </div>
+          <div className="px-8">
+            <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
+              <svg
+                className="w-5 h-5 text-muted-foreground"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                viewBox="0 0 24 24"
+              >
+                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
+              </svg>
+              {dict.instructions}
+            </h2>
+            <ol className="list-decimal list-inside space-y-1">
+              {recipe.instructions?.map((step, idx) => (
+                <li key={idx}>{step}</li>
+              ))}
+            </ol>
+          </div>
+        </div>
+      </div>
+      <div className="max-w-6xl mx-auto px-4 py-8">
         {/* AI-enriched info section */}
         <Card className="py-8">
           <div className="px-8">
@@ -359,38 +395,6 @@ export default async function RecipePage({
           </div>
         </Card>
         {/* ...existing ingredients/instructions... */}
-      </div>
-      {/* Full-width white section for ingredients and instructions */}
-      <div className="bg-background w-full py-10">
-        <div className="max-w-6xl mx-auto px-8 grid grid-cols-1 md:grid-cols-2 gap-8">
-          <ServingsIngredients
-            servings={recipe.servings}
-            ingredients={recipe.ingredients}
-            labels={{
-              ingredients: dict.ingredients,
-              servings: dict.servings,
-            }}
-          />
-          <div className="px-8">
-            <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
-              <svg
-                className="w-5 h-5 text-muted-foreground"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                viewBox="0 0 24 24"
-              >
-                <path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01" />
-              </svg>
-              {dict.instructions}
-            </h2>
-            <ol className="list-decimal list-inside space-y-1">
-              {recipe.instructions?.map((step, idx) => (
-                <li key={idx}>{step}</li>
-              ))}
-            </ol>
-          </div>
-        </div>
       </div>
     </div>
   );
