@@ -2,7 +2,7 @@
 import { useEffect, useMemo } from 'react';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -44,6 +44,7 @@ import { StepsEditor } from '@/components/steps-editor/steps-editor';
 import { countries } from './countries';
 import { Separator } from '../ui/separator';
 import type { RecipeRightsStatus, RecipeSourceType } from '@/types/recipe';
+import { isRecipeOriginFeatureEnabled } from '@/lib/recipe-origin';
 
 export interface RecipeFormProps {
   defaultValues: RecipeFormValues;
@@ -111,7 +112,7 @@ const createFormSchema = (dict: Record<string, string>) =>
         .refine(
           (value) =>
             value.trim() === '' || z.string().url().safeParse(value).success,
-          { message: dict.validationSourceUrl || 'Enter a valid URL.' }
+          { message: dict.validationSourceUrl || 'Enter a valid URL.' },
         ),
       attributionText: z.string(),
       rightsStatus: z.enum(['unknown', 'attributed', 'licensed']),
@@ -159,12 +160,12 @@ const createFormSchema = (dict: Record<string, string>) =>
                 z.string().min(1, {
                   message:
                     dict.validationQuantityRequired || 'Quantity required.',
-                })
+                }),
               ),
             ingredientId: z.string().optional(),
             unit: z.string().optional(),
             unitId: z.string().optional(),
-          })
+          }),
         )
         .min(1, {
           message:
@@ -177,7 +178,7 @@ const createFormSchema = (dict: Record<string, string>) =>
             message:
               dict.validationInstructionMin ||
               'Instruction must be at least 5 characters.',
-          })
+          }),
         )
         .min(1, {
           message:
@@ -244,7 +245,8 @@ const RecipeForm: FC<RecipeFormProps> = ({
     resolver: zodResolver(formSchema),
     defaultValues,
   });
-  const sourceType = form.watch('sourceType');
+  const sourceType = useWatch({ control: form.control, name: 'sourceType' });
+  const showsRecipeOrigin = isRecipeOriginFeatureEnabled();
   const [files, setFiles] = useState<File[]>(defaultFiles || []);
   const [removingIdx, setRemovingIdx] = useState<number | null>(null);
   const onFileReject = (file: File, message: string) => {
@@ -274,7 +276,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
 
       onSubmit(normalizedData, files);
     },
-    [files, onSubmit]
+    [files, onSubmit],
   );
 
   useEffect(() => {
@@ -304,10 +306,10 @@ const RecipeForm: FC<RecipeFormProps> = ({
     sourceType === 'licensed_partner'
       ? dict.licensedPartnerHelper
       : sourceType === 'adapted_from_external'
-      ? dict.adaptedFromExternalHelper
-      : sourceType === 'inspired_by_chef'
-      ? dict.inspiredByChefHelper
-      : dict.userOriginalHelper;
+        ? dict.adaptedFromExternalHelper
+        : sourceType === 'inspired_by_chef'
+          ? dict.inspiredByChefHelper
+          : dict.userOriginalHelper;
 
   const getQuantityUnitValue = (ingredient: Ingredient) => {
     const quantity =
@@ -394,70 +396,41 @@ const RecipeForm: FC<RecipeFormProps> = ({
             </FormItem>
           )}
         />
-        <div className="rounded-xl border border-border/70 bg-muted/30 p-4 md:p-5">
-          <div className="mb-4">
-            <h2 className="text-base font-semibold">{dict.recipeOrigin}</h2>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {originHelperText}
-            </p>
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <FormField
-              control={form.control}
-              name="sourceType"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{dict.sourceType}</FormLabel>
-                  <FormControl>
-                    <Select value={field.value} onValueChange={field.onChange}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder={dict.sourceType} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user_original">
-                          {dict.sourceTypeUserOriginal}
-                        </SelectItem>
-                        <SelectItem value="inspired_by_chef">
-                          {dict.sourceTypeInspiredByChef}
-                        </SelectItem>
-                        <SelectItem value="adapted_from_external">
-                          {dict.sourceTypeAdaptedFromExternal}
-                        </SelectItem>
-                        <SelectItem value="licensed_partner">
-                          {dict.sourceTypeLicensedPartner}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {sourceType !== 'user_original' ? (
+        {showsRecipeOrigin ? (
+          <div className="rounded-xl border border-border/70 bg-muted/30 p-4 md:p-5">
+            <div className="mb-4">
+              <h2 className="text-base font-semibold">{dict.recipeOrigin}</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                {originHelperText}
+              </p>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2">
               <FormField
                 control={form.control}
-                name="rightsStatus"
+                name="sourceType"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>{dict.rightsStatus}</FormLabel>
+                    <FormLabel>{dict.sourceType}</FormLabel>
                     <FormControl>
                       <Select
                         value={field.value}
                         onValueChange={field.onChange}
-                        disabled={sourceType === 'licensed_partner'}
                       >
                         <SelectTrigger className="w-full">
-                          <SelectValue placeholder={dict.rightsStatus} />
+                          <SelectValue placeholder={dict.sourceType} />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="unknown">
-                            {dict.rightsStatusUnknown}
+                          <SelectItem value="user_original">
+                            {dict.sourceTypeUserOriginal}
                           </SelectItem>
-                          <SelectItem value="attributed">
-                            {dict.rightsStatusAttributed}
+                          <SelectItem value="inspired_by_chef">
+                            {dict.sourceTypeInspiredByChef}
                           </SelectItem>
-                          <SelectItem value="licensed">
-                            {dict.rightsStatusLicensed}
+                          <SelectItem value="adapted_from_external">
+                            {dict.sourceTypeAdaptedFromExternal}
+                          </SelectItem>
+                          <SelectItem value="licensed_partner">
+                            {dict.sourceTypeLicensedPartner}
                           </SelectItem>
                         </SelectContent>
                       </Select>
@@ -466,75 +439,109 @@ const RecipeForm: FC<RecipeFormProps> = ({
                   </FormItem>
                 )}
               />
-            ) : null}
-          </div>
-          {sourceType !== 'user_original' ? (
-            <div className="mt-4 grid gap-4 md:grid-cols-2">
-              <FormField
-                control={form.control}
-                name="sourceName"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{dict.sourceName}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={dict.sourceNamePlaceholder}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {dict.sourceNameDescription}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="sourceUrl"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>{dict.sourceUrl}</FormLabel>
-                    <FormControl>
-                      <Input
-                        placeholder={dict.sourceUrlPlaceholder}
-                        {...field}
-                        value={field.value ?? ''}
-                      />
-                    </FormControl>
-                    <FormDescription>
-                      {dict.sourceUrlDescription}
-                    </FormDescription>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <div className="md:col-span-2">
+              {sourceType !== 'user_original' ? (
                 <FormField
                   control={form.control}
-                  name="attributionText"
+                  name="rightsStatus"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>{dict.attributionText}</FormLabel>
+                      <FormLabel>{dict.rightsStatus}</FormLabel>
                       <FormControl>
-                        <Textarea
-                          placeholder={dict.attributionTextPlaceholder}
+                        <Select
+                          value={field.value}
+                          onValueChange={field.onChange}
+                          disabled={sourceType === 'licensed_partner'}
+                        >
+                          <SelectTrigger className="w-full">
+                            <SelectValue placeholder={dict.rightsStatus} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="unknown">
+                              {dict.rightsStatusUnknown}
+                            </SelectItem>
+                            <SelectItem value="attributed">
+                              {dict.rightsStatusAttributed}
+                            </SelectItem>
+                            <SelectItem value="licensed">
+                              {dict.rightsStatusLicensed}
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              ) : null}
+            </div>
+            {sourceType !== 'user_original' ? (
+              <div className="mt-4 grid gap-4 md:grid-cols-2">
+                <FormField
+                  control={form.control}
+                  name="sourceName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dict.sourceName}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={dict.sourceNamePlaceholder}
                           {...field}
                           value={field.value ?? ''}
                         />
                       </FormControl>
                       <FormDescription>
-                        {dict.attributionTextDescription}
+                        {dict.sourceNameDescription}
                       </FormDescription>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
+                <FormField
+                  control={form.control}
+                  name="sourceUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>{dict.sourceUrl}</FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={dict.sourceUrlPlaceholder}
+                          {...field}
+                          value={field.value ?? ''}
+                        />
+                      </FormControl>
+                      <FormDescription>
+                        {dict.sourceUrlDescription}
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="md:col-span-2">
+                  <FormField
+                    control={form.control}
+                    name="attributionText"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>{dict.attributionText}</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder={dict.attributionTextPlaceholder}
+                            {...field}
+                            value={field.value ?? ''}
+                          />
+                        </FormControl>
+                        <FormDescription>
+                          {dict.attributionTextDescription}
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
               </div>
-            </div>
-          ) : null}
-        </div>
+            ) : null}
+          </div>
+        ) : null}
         <div className="flex flex-col md:flex-row gap-4 w-full">
           <FormField
             control={form.control}
@@ -625,7 +632,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
                             // Update both quantity and unit if parsing is available
                             if (parsedValues.quantity.trim() !== '') {
                               newArr[idx].quantity = String(
-                                parsedValues.quantity
+                                parsedValues.quantity,
                               );
                             }
                             newArr[idx].unit = parsedValues.unit || val;
@@ -659,7 +666,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
                           setRemovingIdx(idx);
                           setTimeout(() => {
                             const newArr = field.value.filter(
-                              (_: Ingredient, i: number) => i !== idx
+                              (_: Ingredient, i: number) => i !== idx,
                             );
                             field.onChange(newArr);
                             setRemovingIdx(null);
@@ -670,7 +677,7 @@ const RecipeForm: FC<RecipeFormProps> = ({
                         <X className="w-4 h-4" />
                       </Button>
                     </div>
-                  )
+                  ),
                 )}
                 <Button
                   type="button"

@@ -4,6 +4,10 @@ import type {
   RecipeSourceType,
 } from '@/types/recipe';
 
+export function isRecipeOriginFeatureEnabled() {
+  return process.env.NEXT_PUBLIC_RECIPE_ORIGIN_ENABLED === 'true';
+}
+
 type SupportedLanguage = 'en' | 'cs';
 
 type OriginTheme = {
@@ -93,6 +97,10 @@ function normalizeLanguage(language?: string): SupportedLanguage {
 }
 
 export function hasRecipeOrigin(recipe: Pick<Recipe, 'sourceType'>) {
+  if (!isRecipeOriginFeatureEnabled()) {
+    return false;
+  }
+
   return Boolean(recipe.sourceType && recipe.sourceType !== 'user_original');
 }
 
@@ -100,6 +108,10 @@ export function getRecipeOriginBadgeLabel(
   sourceType?: RecipeSourceType,
   language?: string,
 ) {
+  if (!isRecipeOriginFeatureEnabled()) {
+    return null;
+  }
+
   if (!sourceType || sourceType === 'user_original') {
     return null;
   }
@@ -113,6 +125,10 @@ export function getRecipeOriginSummary(
   recipe: Pick<Recipe, 'sourceType' | 'sourceName' | 'attributionText'>,
   language?: string,
 ) {
+  if (!isRecipeOriginFeatureEnabled()) {
+    return null;
+  }
+
   if (!recipe.sourceType || recipe.sourceType === 'user_original') {
     return null;
   }
@@ -137,6 +153,10 @@ export function getRecipeOriginRightsLabel(
   rightsStatus?: RecipeRightsStatus,
   language?: string,
 ) {
+  if (!isRecipeOriginFeatureEnabled()) {
+    return null;
+  }
+
   if (!rightsStatus || rightsStatus === 'unknown') {
     return null;
   }
@@ -147,6 +167,10 @@ export function getRecipeOriginRightsLabel(
 }
 
 export function getRecipeOriginTheme(sourceType?: RecipeSourceType) {
+  if (!isRecipeOriginFeatureEnabled()) {
+    return null;
+  }
+
   if (!sourceType || sourceType === 'user_original') {
     return null;
   }
