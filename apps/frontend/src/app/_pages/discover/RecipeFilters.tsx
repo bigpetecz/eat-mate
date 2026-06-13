@@ -1,7 +1,6 @@
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Combobox } from '@/components/ui/combobox';
-import { Slider } from '@/components/ui/slider';
 import { MultiSelect } from '@/components/ui/multiselect';
 import {
   Select,
@@ -28,6 +27,15 @@ import {
   specialAttributes,
 } from '@/lib/recipe-labels';
 import type { RecipeSourceType } from '@/types/recipe';
+import {
+  countries,
+  difficulties,
+  mealTypes,
+} from './components/discoverFilterOptions';
+import {
+  CurvedRangeSlider,
+  RangeSummary,
+} from './components/discoverRangeSlider';
 
 interface RecipeFiltersProps {
   defaultValues: {
@@ -48,138 +56,6 @@ interface RecipeFiltersProps {
   onFiltersSubmit: (values: Record<string, unknown>) => void;
   dict: Record<string, string>;
 }
-
-const mealTypes = ['Breakfast', 'Lunch', 'Dinner', 'Snack', 'Dessert'];
-const difficulties = ['Easy', 'Medium', 'Hard'];
-
-// List of countries with their own cuisine, all European, major Latin American, Asian, and Arab countries, ordered alphabetically
-const countries = [
-  // Europe
-  'Albania',
-  'Andorra',
-  'Armenia',
-  'Austria',
-  'Azerbaijan',
-  'Belarus',
-  'Belgium',
-  'Bosnia and Herzegovina',
-  'Bulgaria',
-  'Croatia',
-  'Cyprus',
-  'Czech Republic',
-  'Denmark',
-  'Estonia',
-  'Finland',
-  'France',
-  'Georgia',
-  'Germany',
-  'Greece',
-  'Hungary',
-  'Iceland',
-  'Ireland',
-  'Italy',
-  'Kazakhstan',
-  'Kosovo',
-  'Latvia',
-  'Liechtenstein',
-  'Lithuania',
-  'Luxembourg',
-  'Malta',
-  'Moldova',
-  'Monaco',
-  'Montenegro',
-  'Netherlands',
-  'North Macedonia',
-  'Norway',
-  'Poland',
-  'Portugal',
-  'Romania',
-  'Russia',
-  'San Marino',
-  'Serbia',
-  'Slovakia',
-  'Slovenia',
-  'Spain',
-  'Sweden',
-  'Switzerland',
-  'Turkey',
-  'Ukraine',
-  'United Kingdom',
-  // Latin America
-  'Argentina',
-  'Bolivia',
-  'Brazil',
-  'Chile',
-  'Colombia',
-  'Costa Rica',
-  'Cuba',
-  'Dominican Republic',
-  'Ecuador',
-  'El Salvador',
-  'Guatemala',
-  'Honduras',
-  'Mexico',
-  'Nicaragua',
-  'Panama',
-  'Paraguay',
-  'Peru',
-  'Uruguay',
-  'Venezuela',
-  // Asia
-  'Bangladesh',
-  'Cambodia',
-  'China',
-  'India',
-  'Indonesia',
-  'Japan',
-  'Laos',
-  'Malaysia',
-  'Mongolia',
-  'Myanmar',
-  'Nepal',
-  'Pakistan',
-  'Philippines',
-  'Singapore',
-  'South Korea',
-  'Sri Lanka',
-  'Taiwan',
-  'Thailand',
-  'Vietnam',
-  // Middle East / Arab World
-  'Algeria',
-  'Bahrain',
-  'Egypt',
-  'Iraq',
-  'Jordan',
-  'Kuwait',
-  'Lebanon',
-  'Libya',
-  'Morocco',
-  'Oman',
-  'Palestine',
-  'Qatar',
-  'Saudi Arabia',
-  'Sudan',
-  'Syria',
-  'Tunisia',
-  'United Arab Emirates',
-  'Yemen',
-  // Africa (selected)
-  'Ethiopia',
-  'Ghana',
-  'Kenya',
-  'Nigeria',
-  'Senegal',
-  'South Africa',
-  'Tanzania',
-  // Oceania
-  'Australia',
-  'Fiji',
-  'New Zealand',
-  // North America
-  'Canada',
-  'United States',
-];
 
 export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   defaultValues,
@@ -220,44 +96,42 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
   // Determine if any filter (other than search) is set
   const hasActiveFilters = Boolean(
     defaultValues.mealType ||
-      defaultValues.sourceType ||
-      defaultValues.difficulty ||
-      defaultValues.country ||
-      (defaultValues.diets && defaultValues.diets.length) ||
-      (defaultValues.techniques && defaultValues.techniques.length) ||
-      (defaultValues.specialAttributes &&
-        defaultValues.specialAttributes.length) ||
-      (defaultValues.cookTime &&
-        (defaultValues.cookTime[0] !== 0 ||
-          defaultValues.cookTime[1] !== 240)) ||
-      (defaultValues.calories &&
-        (defaultValues.calories[0] !== 0 ||
-          defaultValues.calories[1] !== 2000)) ||
-      (defaultValues.estimatedCost &&
-        (defaultValues.estimatedCost[0] !== 0 ||
-          defaultValues.estimatedCost[1] !== 30))
+    defaultValues.sourceType ||
+    defaultValues.difficulty ||
+    defaultValues.country ||
+    (defaultValues.diets && defaultValues.diets.length) ||
+    (defaultValues.techniques && defaultValues.techniques.length) ||
+    (defaultValues.specialAttributes &&
+      defaultValues.specialAttributes.length) ||
+    (defaultValues.cookTime &&
+      (defaultValues.cookTime[0] !== 0 || defaultValues.cookTime[1] !== 240)) ||
+    (defaultValues.calories &&
+      (defaultValues.calories[0] !== 0 ||
+        defaultValues.calories[1] !== 2000)) ||
+    (defaultValues.estimatedCost &&
+      (defaultValues.estimatedCost[0] !== 0 ||
+        defaultValues.estimatedCost[1] !== 30)),
   );
 
   // Determine if any advanced filter is set
   const hasAdvancedFilters = Boolean(
     (defaultValues.diets && defaultValues.diets.length) ||
-      (defaultValues.techniques && defaultValues.techniques.length) ||
-      (defaultValues.specialAttributes &&
-        defaultValues.specialAttributes.length) ||
-      (defaultValues.cookTime &&
-        (defaultValues.cookTime[0] !== 0 ||
-          defaultValues.cookTime[1] !== 240)) ||
-      (defaultValues.calories &&
-        (defaultValues.calories[0] !== 0 ||
-          defaultValues.calories[1] !== 2000)) ||
-      (defaultValues.estimatedCost &&
-        (defaultValues.estimatedCost[0] !== 0 ||
-          defaultValues.estimatedCost[1] !== 30))
+    (defaultValues.techniques && defaultValues.techniques.length) ||
+    (defaultValues.specialAttributes &&
+      defaultValues.specialAttributes.length) ||
+    (defaultValues.cookTime &&
+      (defaultValues.cookTime[0] !== 0 || defaultValues.cookTime[1] !== 240)) ||
+    (defaultValues.calories &&
+      (defaultValues.calories[0] !== 0 ||
+        defaultValues.calories[1] !== 2000)) ||
+    (defaultValues.estimatedCost &&
+      (defaultValues.estimatedCost[0] !== 0 ||
+        defaultValues.estimatedCost[1] !== 30)),
   );
 
   // State for active tab and advanced filters
   const [activeTab, setActiveTab] = useState(
-    hasActiveFilters ? 'filters' : 'search'
+    hasActiveFilters ? 'filters' : 'search',
   );
   const [showAdvanced, setShowAdvanced] = useState(hasAdvancedFilters);
 
@@ -608,7 +482,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                   {dict['Calories (kcal) per serving']}
                                 </FormLabel>
                                 <FormControl>
-                                  <Slider
+                                  <CurvedRangeSlider
                                     min={0}
                                     max={2000}
                                     step={50}
@@ -617,11 +491,12 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                     defaultValue={[0, 2000]}
                                   />
                                 </FormControl>
-                                <div className="text-xs text-muted-foreground">
-                                  {isCaloriesDefault
-                                    ? dict['Any']
-                                    : `${filterValues.calories[0]}–${filterValues.calories[1]} kcal`}
-                                </div>
+                                <RangeSummary
+                                  value={filterValues.calories}
+                                  maxValue={2000}
+                                  defaultLabel={dict['Any']}
+                                  suffix=" kcal"
+                                />
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -635,7 +510,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                               <FormItem>
                                 <FormLabel>{dict['Cook Time (min)']}</FormLabel>
                                 <FormControl>
-                                  <Slider
+                                  <CurvedRangeSlider
                                     min={0}
                                     max={240}
                                     step={5}
@@ -644,11 +519,12 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                     defaultValue={[0, 240]}
                                   />
                                 </FormControl>
-                                <div className="text-xs text-muted-foreground">
-                                  {isCookTimeDefault
-                                    ? dict['Any']
-                                    : `${filterValues.cookTime[0]}–${filterValues.cookTime[1]} min`}
-                                </div>
+                                <RangeSummary
+                                  value={filterValues.cookTime}
+                                  maxValue={240}
+                                  defaultLabel={dict['Any']}
+                                  suffix=" min"
+                                />
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -664,7 +540,7 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                   {dict['Estimated Cost (€) per serving']}
                                 </FormLabel>
                                 <FormControl>
-                                  <Slider
+                                  <CurvedRangeSlider
                                     min={0}
                                     max={30}
                                     step={1}
@@ -673,15 +549,13 @@ export const RecipeFilters: React.FC<RecipeFiltersProps> = ({
                                     defaultValue={[0, 30]}
                                   />
                                 </FormControl>
-                                <div className="text-xs text-muted-foreground">
-                                  {isEstimatedCostDefault
-                                    ? dict['Any']
-                                    : `€${
-                                        filterValues.estimatedCost?.[0] ?? 0
-                                      }–€${
-                                        filterValues.estimatedCost?.[1] ?? 30
-                                      }`}
-                                </div>
+                                <RangeSummary
+                                  value={filterValues.estimatedCost}
+                                  maxValue={30}
+                                  defaultLabel={dict['Any']}
+                                  prefix="€"
+                                  suffix=""
+                                />
                                 <FormMessage />
                               </FormItem>
                             )}
