@@ -23,7 +23,7 @@ function toMixedFraction(value: number): string {
 
 function formatQuantity(
   value: number,
-  unit: string
+  unit: string,
 ): { main: string; unit: string } {
   return {
     main: toMixedFraction(value),
@@ -56,7 +56,7 @@ export const ServingsIngredients: FC<ServingsIngredientsProps> = ({
   function updateServings(nextServings: number) {
     const clampedServings = Math.min(
       MAX_SERVINGS,
-      Math.max(MIN_SERVINGS, nextServings)
+      Math.max(MIN_SERVINGS, nextServings),
     );
 
     setServings(clampedServings);
@@ -64,7 +64,7 @@ export const ServingsIngredients: FC<ServingsIngredientsProps> = ({
 
   return (
     <div>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+      <div className="mb-4 flex flex-col gap-3 sm:mb-0 sm:flex-row sm:items-center">
         <h2 className="text-xl font-semibold mb-3 flex items-center gap-2">
           <svg
             className="w-5 h-5 text-muted-foreground"
@@ -119,7 +119,7 @@ export const ServingsIngredients: FC<ServingsIngredientsProps> = ({
           if (ing.quantity) {
             const scaled = formatQuantity(
               Number(ing.quantity) * scale,
-              ing.unit
+              ing.unit,
             );
             return (
               <li key={idx} className="flex gap-2 items-baseline">
