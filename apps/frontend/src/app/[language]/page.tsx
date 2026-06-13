@@ -135,7 +135,8 @@ export default function HomePage() {
           {/* Example clickable badges for homepage popular tags */}
           <Link
             href={getLocalizedRoute('discover', language as Locale, {
-              cookingTime: 30,
+              cookTimeMin: 0,
+              cookTimeMax: 30,
             })}
           >
             <Badge variant="outline" className="cursor-pointer hover:bg-accent">

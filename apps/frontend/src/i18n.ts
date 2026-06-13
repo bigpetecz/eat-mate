@@ -8,6 +8,8 @@ export type Locale = (typeof i18n)['locales'][number];
 interface DiscoverQueryParams {
   search?: string;
   cookingTime?: number;
+  cookTimeMin?: number;
+  cookTimeMax?: number;
   diets?: string;
   estimatedCostMax?: number;
   specialAttributes?: string;
@@ -23,14 +25,18 @@ const routes = {
       if (!queryParams) return '/en/discover';
       const {
         search,
-        cookingTime,
+        cookTimeMin,
+        cookTimeMax,
         diets,
         estimatedCostMax,
         specialAttributes,
       } = queryParams;
       const params = new URLSearchParams();
       if (search) params.set('search', search);
-      if (cookingTime) params.set('cookTime', String(cookingTime));
+      if (cookTimeMin !== undefined)
+        params.set('cookTimeMin', String(cookTimeMin));
+      if (cookTimeMax !== undefined)
+        params.set('cookTimeMax', String(cookTimeMax));
       if (diets) params.set('diets', diets);
       if (estimatedCostMax)
         params.set('estimatedCostMax', String(estimatedCostMax));
@@ -42,12 +48,18 @@ const routes = {
       const {
         search,
         cookingTime,
+        cookTimeMin,
+        cookTimeMax,
         diets,
         estimatedCostMax,
         specialAttributes,
       } = queryParams;
       const params = new URLSearchParams();
       if (search) params.set('search', search);
+      if (cookTimeMin !== undefined)
+        params.set('cookTimeMin', String(cookTimeMin));
+      if (cookTimeMax !== undefined)
+        params.set('cookTimeMax', String(cookTimeMax));
       if (cookingTime) params.set('cookTime', String(cookingTime));
       if (diets) params.set('diets', diets);
       if (estimatedCostMax)
@@ -100,7 +112,7 @@ const routes = {
 
 export const getLocalizedRoute = <
   RouteKey extends keyof typeof routes,
-  L extends Locale = Locale
+  L extends Locale = Locale,
 >(
   routeKey: RouteKey,
   locale: L,
@@ -137,7 +149,7 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     {
       key: 'login',
       pattern: new RegExp(
-        `^/(${localesPattern})/(login|sign-in|prihlaseni|prihlasit-se)$`
+        `^/(${localesPattern})/(login|sign-in|prihlaseni|prihlasit-se)$`,
       ),
     },
     {
@@ -147,20 +159,20 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     {
       key: 'recipeDetail',
       pattern: new RegExp(
-        `^/(${localesPattern})/(recipe|recept|recepty)/([^/]+)$`
+        `^/(${localesPattern})/(recipe|recept|recepty)/([^/]+)$`,
       ),
       paramNames: ['slug'],
     },
     {
       key: 'recipeCreate',
       pattern: new RegExp(
-        `^/(${localesPattern})/(recipe|recept|recepty)/(create|vytvorit)$`
+        `^/(${localesPattern})/(recipe|recept|recepty)/(create|vytvorit)$`,
       ),
     },
     {
       key: 'recipeEdit',
       pattern: new RegExp(
-        `^/(${localesPattern})/(recipe|recept|recepty)/([^/]+)/(edit|upravit)$`
+        `^/(${localesPattern})/(recipe|recept|recepty)/([^/]+)/(edit|upravit)$`,
       ),
       paramNames: ['slug'],
     },
@@ -171,7 +183,7 @@ export const resolveLocalizedPath = (pathname: string, locale: Locale) => {
     {
       key: 'favorites',
       pattern: new RegExp(
-        `^/(${localesPattern})/(favorites|oblibene|oblíbene)$`
+        `^/(${localesPattern})/(favorites|oblibene|oblíbene)$`,
       ),
     },
   ];
