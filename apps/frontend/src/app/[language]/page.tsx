@@ -32,10 +32,13 @@ export default function HomePage() {
       router.push(
         getLocalizedRoute('discover', language as Locale, {
           search: data.search.trim(),
-        })
+        }),
       );
       reset();
     }
+    router.push(
+      getLocalizedRoute('discover', language as Locale, { search: '' }),
+    );
   };
 
   useEffect(() => {
@@ -59,7 +62,7 @@ export default function HomePage() {
         setError(
           apiError.message ||
             dictionary?.failedToLoadRecipes ||
-            'Failed to load recipes.'
+            'Failed to load recipes.',
         );
       } finally {
         setLoading(false);
@@ -146,6 +149,15 @@ export default function HomePage() {
           >
             <Badge variant="outline" className="cursor-pointer hover:bg-accent">
               Vegan
+            </Badge>
+          </Link>
+          <Link
+            href={getLocalizedRoute('discover', language as Locale, {
+              diets: 'vegetarian',
+            })}
+          >
+            <Badge variant="outline" className="cursor-pointer hover:bg-accent">
+              Vegetarian
             </Badge>
           </Link>
           <Link
